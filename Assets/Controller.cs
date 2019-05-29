@@ -16,6 +16,7 @@ public class Controller : MonoBehaviour {
     public static string myId;
     private bool setInitialPositions = false;
     public static List<Opponent> opponents;
+    public static int COINS_OWNED = 0;
     
     void Start() {
         if (disableVR) {
@@ -36,25 +37,31 @@ public class Controller : MonoBehaviour {
             Dictionary<string, string> res = e.data.ToDictionary();
             myId = res["id"];
             transform.localPosition = DeserializeVector3(e.data["position"]);
+            Opponent.UPDATE_INTERVAL = float.Parse(res["interval"]);
         });
         
         socket.On("update", OnSocketUpdate);
+        socket.On("tellGive", HandleJealousy);
     }
+
+    void HandleJealousy(SocketIOEvent e) {
+        //TODO animate from opponent obj with id e.data[from] to e.data[to]
+    }
+
 
     void OnSocketUpdate(SocketIOEvent e) {
         if (opponents[0].GetId().Equals("")) {
             //If this is the first update, assign ids:
-            Dictionary<string, string> res = e.data.ToDictionary();
             int ind = 0;
-            foreach (string key in res.Keys) {
+            foreach (string key in e.data.keys) { // res.Keys) {
                 if (!key.Equals(myId)) {
                     opponents[ind++].SetId(key);
                 }
             }
         }
         else {
-            foreach (Opponent opp in opponents) {
-                opp.AdjustTransform(e.data, setInitialPositions);
+            foreach (Opponent o in opponents) {
+                o.AdjustTransform(e.data, !setInitialPositions);
             }
             setInitialPositions = true;
         }
@@ -64,6 +71,8 @@ public class Controller : MonoBehaviour {
         send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
         socket.Emit("update", send);
     }
+    
+    
 
     public static JSONObject SerializeVector3(Vector3 v) {
         JSONObject res = new JSONObject(JSONObject.Type.OBJECT);
@@ -103,10 +112,38 @@ public class Controller : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        if (OVRInput.Get(OVRInput.Button.One)) { //A button pressed, right controller:
-            Fly(speed * Time.deltaTime);
-        } else if (OVRInput.Get(OVRInput.Button.Two)) {
-            Fly(-speed * Time.deltaTime);
+        if (!disableVR) {
+            if (OVRInput.Get(OVRInput.Button.One)) {
+                //A button pressed, right controller:
+                Fly(speed * Time.deltaTime);
+            }
+            else if (OVRInput.Get(OVRInput.Button.Two)) {
+                Fly(-speed * Time.deltaTime);
+            }
+            else if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
+                //Raycast, check tag, get ID, Emit event
+            }
+        }
+        else {
+            if (Input.GetKey(KeyCode.RightArrow)) {
+                transform.localEulerAngles += Vector3.up;
+            }
+            if (Input.GetKey(KeyCode.LeftArrow)) {
+                transform.localEulerAngles -= Vector3.up;
+            } 
+            if (Input.GetKey(KeyCode.UpArrow)) {
+                transform.localEulerAngles += Vector3.left;
+            }
+            if (Input.GetKey(KeyCode.DownArrow)) {
+                transform.localEulerAngles -= Vector3.left;
+            }
+
+            if (Input.GetKey(KeyCode.W)) {
+                Fly(speed * Time.deltaTime);
+            }
+            if (Input.GetKey(KeyCode.S)) {
+                Fly(-speed * Time.deltaTime);
+            }
         }
     }
 
@@ -115,7 +152,10 @@ public class Controller : MonoBehaviour {
         transform.localPosition += transform.GetChild(0).GetChild(0).forward * speed;
     }
 
-    Quaternion GetMyRotation() {
-        return transform.GetChild(0).GetChild(0).localRotation;
+    Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
+        if (!disableVR) {
+            return transform.GetChild(0).GetChild(0).localRotation;
+        }
+        return transform.localRotation;
     }
 }
