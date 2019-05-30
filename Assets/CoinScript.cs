@@ -28,7 +28,6 @@ public class CoinScript : MonoBehaviour {
     private void OnTriggerStay(Collider other) {
         if (!collided) {
             if (other.gameObject.tag.Equals("Me") && Controller.myId == id) { 
-                //parent.Collect(index);
                 parent.Collect(index);
                 collided = true;
             }

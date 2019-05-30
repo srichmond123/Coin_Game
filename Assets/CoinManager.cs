@@ -19,6 +19,7 @@ public class CoinManager : MonoBehaviour {
     }
 
     void HandleOtherCollect(SocketIOEvent e) {
+        //TODO maybe store 2 other players' coins
         Dictionary<string, string> res = e.data.ToDictionary();
         int idx = int.Parse(res["index"]);
         Destroy(coins[idx]);
@@ -30,6 +31,7 @@ public class CoinManager : MonoBehaviour {
          * Instantiate each, assign each Coin object
          * an id (it will handle color internally)
          */
+        coins.Clear(); // Could be 2nd or 3rd round
         foreach (string id in e.data.keys) {
             Color c = Color.magenta;
             if (!id.Equals(Controller.myId)) {
@@ -66,7 +68,7 @@ public class CoinManager : MonoBehaviour {
         socket.Emit("collect", send);
         Destroy(coins[index]);
         coins[index] = null;
-        Controller.COINS_OWNED++;
+        Controller.MyCoinsOwned++;
     }
 
     // Update is called once per frame

@@ -51,13 +51,12 @@ public class Opponent : MonoBehaviour {
 
     //Turn raw server data into position, rotation for specific this.id:
     public void AdjustTransform(JSONObject data, bool hardSet) {
-        //JSONObject myData = data[Controller.myId]; //TODO => this.id
         JSONObject myData = data[id];
         JSONObject pos = myData["position"];
         JSONObject rot = myData["rotation"];
         //Controller.socket.Emit("log", pos);
 
-        targetPosition = Controller.DeserializeVector3(pos); //+ new Vector3(-4, 0, 0); //TODO Remove this constant
+        targetPosition = Controller.DeserializeVector3(pos); 
         targetRotation = Controller.DeserializeQuaternion(rot);
 
         if (hardSet) {

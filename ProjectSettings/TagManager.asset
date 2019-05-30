@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Me
+  - Not Me
   layers:
   - Default
   - TransparentFX
