@@ -57,7 +57,6 @@ public class Controller : MonoBehaviour {
     }
 
     void HandleRejection(SocketIOEvent e) {
-        //Because you rejected the server:
         //TODO Thank you screen, etc.
     }
 
@@ -133,7 +132,7 @@ public class Controller : MonoBehaviour {
     }
 
     void OnSocketUpdate(SocketIOEvent e) {
-        if (opponents[0].GetId().Equals("")) {
+        if (opponents[0].GetId().Equals("")) { 
             //If this is the first update, assign ids:
             int ind = 0;
             foreach (string key in e.data.keys) { // res.Keys) {

@@ -13,17 +13,25 @@ const io = socketIO(server);
 io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
-const UPDATE_INTERVAL = 150; //50 ms = 20 times per second
+const UPDATE_INTERVAL = 150; // (In milliseconds)
 var users = {}; //id as index, position and rotation stored
+var coinCount = {}; //id -> numOwnCoins, numOtherCoins
 
 var coins = {}; //id: coins: [vec1, vec2, ...].
-//^^This doesn't update every update interval, 
-// but every time a client requests a coin they run into,
-// or tries to send a coin. Whether they can do all this or not is
-// client side decided (probably).
+/*
+ * ^This doesn't update every update interval, 
+ * but every time a client requests a coin they run into,
+ * or tries to send a coin. Whether they can do all this or not is
+ * client side decided (probably).
+ */
 
-var trial = 1; //Will be incremented, used to choose network topology
+var trial = 0; //Will be incremented, used to choose network topology
 var endzone = {}; //each entry = {id: finished (true/false)}
+var game_num = 0; 
+/*
+ * TODO Initialize value of game_num based on database entry of games
+ * played, or txt/json file stored on local computer.
+ */
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -35,7 +43,7 @@ io.on('connection', (socket) => {
 		});
 
 		socket.on('finish', () => {
-			// Keep count of users done, if == GAME_SIZE and trial <= 3, call start method,
+			// Keep count of users done, if == GAME_SIZE and trial <= 2, call start method,
 			// otherwise, set trial = 0, disconnect everyone
 			endzone[socket.id] = true;
 			console.log(socket.id + " finished");
@@ -43,16 +51,17 @@ io.on('connection', (socket) => {
 				//Start new game
 				console.log("everyone's done");
 				endzone = {};
-				if (trial <= 3) {
+				if (trial <= 2) {
 					start();
 					sendCoins();
 				} else { //All 3 trials done, notify everyone, break socket connections.
 					all_ids = Object.keys(users);
 					for (let id of all_ids) {
 						io.to(id).emit('getOut');
-						delete users[id];
+						//delete users[id]; //Will happen when they call socket.Disconnect
 						delete endzone[id];
 					}
+					trial = 0;
 				}
 			}
 		});
@@ -64,7 +73,7 @@ io.on('connection', (socket) => {
 		});
 
 		socket.on('collect', (data) => {
-			users[socket.id].numOwnCoins == undefined ? users[socket.id].numOwnCoins = 1 : users[socket.id].numOwnCoins++;
+			coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
 			for (let id of Object.keys(users)) {
 				if (id != socket.id) {
 					io.to(id).emit('tellCollect', {index: data.index});
@@ -73,8 +82,8 @@ io.on('connection', (socket) => {
 		});
 
 		socket.on('give', (data) => {
-			users[socket.id].numOwnCoins--;
-			users[data.id].numOtherCoins == undefined ? users[data.id].numOtherCoins = 1 : users[data.id].numOtherCoins++;
+			coinCount[socket.id].numOwnCoins--;
+			coinCount[data.id].numOtherCoins == undefined ? coinCount[data.id].numOtherCoins = 1 : coinCount[data.id].numOtherCoins++;
 			// So the coin giver can publicly virtue signal via animation to the one other person,
 			// or, coin receiver can know (if data.to == their id)
 			for (let id of Object.keys(users)) {
@@ -101,6 +110,9 @@ io.on('connection', (socket) => {
 		}
 	}
 });
+
+server.listen(port, () => console.log(`listening on port ${port}`));
+
 
 const start = () => {
 	//shift variable below is TEST code, a placeholder for coin generation
@@ -136,20 +148,21 @@ const sendCoins = () => {
 //Returns object of ids as key, values = array of ids they can communicate with:
 const getTopology = (ids, trial) => {
 	let ret = {};
-	switch (trial) {
-		case 1: {
+	top_idx = getTopologyIndex(trial, game_num);
+	switch (top_idx) {
+		case 0: {
 			ret[ids[0]] = [ids[1]];
 			ret[ids[1]] = [ids[2]];
 			ret[ids[2]] = [ids[0]];
 			break;
 		}
-		case 2: {
+		case 1: {
 			ret[ids[0]] = [ids[1]];
 			ret[ids[1]] = [ids[0], ids[2]];
 			ret[ids[2]] = [ids[0]];
 			break;
 		}
-		case 3: {
+		case 2: {
 			ret[ids[0]] = [ids[1], ids[2]];
 			ret[ids[1]] = [ids[0], ids[2]];
 			ret[ids[2]] = [ids[0], ids[1]];
@@ -157,6 +170,20 @@ const getTopology = (ids, trial) => {
 		}
 	}
 	return ret;
+}
+
+let _arrangements = [
+	[0, 1, 2], 
+	[0, 2, 1],
+	[1, 0, 2],
+	[1, 2, 0],
+	[2, 0, 1],
+	[2, 1, 0]
+];
+
+const getTopologyIndex = (trial, game) => {
+	//3! == 6 possible arrangements:
+	return _arrangements[game_num % 6][trial];
 }
 
 const update = () => {
@@ -167,5 +194,4 @@ const update = () => {
 }
 
 
-server.listen(port, () => console.log(`listening on port ${port}`));
 

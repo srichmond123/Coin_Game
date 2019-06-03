@@ -63,9 +63,6 @@ public class Opponent : MonoBehaviour {
             transform.localPosition = targetPosition;
             transform.localRotation = targetRotation;
         }
-        /*Dictionary<string, string> dict = new Dictionary<string, string>();
-        dict["interval"] = realInterval.ToString();
-        Controller.socket.Emit("log", new JSONObject(dict));*/
         realInterval = 0f;
 		timeSinceUpdate = 0f;
     }

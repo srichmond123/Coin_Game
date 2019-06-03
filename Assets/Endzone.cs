@@ -20,7 +20,7 @@ public class Endzone : MonoBehaviour {
             Finished = true;
         }
         else if (other.tag.Equals("Not Me")) {
-            OthersFinished++;
+            OthersFinished++; //TODO this should probably be refined (prevent reentries)
             //TODO Scoreboard / info board and minimap should have this info
         }
     }
