@@ -37,6 +37,7 @@ io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
 		console.log('client connected: ' + socket.id);
 		users[socket.id] = {};
+		coinCount[socket.id] = {};
 
 		socket.on('update', (data) => {
 			users[socket.id] = data;
