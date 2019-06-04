@@ -10,10 +10,12 @@ public class CoinManager : MonoBehaviour {
     public GameObject coinPrefab;
     private List<GameObject> coins;
     private static SocketIOComponent socket;
+    private Buckets buckets;
     void Start() {
         coins = new List<GameObject>();
         GameObject sockObject = GameObject.Find("SocketIO");
         socket = sockObject.GetComponent<SocketIOComponent>();
+        buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
         socket.On("coins", HandleCoins);
         socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
     }
@@ -68,7 +70,8 @@ public class CoinManager : MonoBehaviour {
         socket.Emit("collect", send);
         Destroy(coins[index]);
         coins[index] = null;
-        Controller.MyCoinsOwned++;
+        buckets.Handle();
+        //Controller.MyCoinsOwned++; //Not until they put in own bucket
     }
 
     // Update is called once per frame

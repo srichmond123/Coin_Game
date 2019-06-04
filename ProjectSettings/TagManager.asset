@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Me
   - Not Me
+  - Bucket
   layers:
   - Default
   - TransparentFX

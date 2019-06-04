@@ -11,10 +11,18 @@ using Quaternion = UnityEngine.Quaternion;
 
 
 public class Controller : MonoBehaviour {
+    //legacy code:
     public const float MYCOIN_BOOST_FACTOR = 5.0f; //2 * speed
     public const float OTHERCOIN_BOOST_FACTOR = 10.0f;
     public const float BOOST_TIME = 4.0f;
     private const float SLOWDOWN_INTERVAL = 1.0f;
+    //</legacy>
+    private const float MIN_RANGE = 1.0f;
+    private const float MAX_RANGE = 20f; //Maybe infinite
+    private const float OWN_RANGE_INCREASE = 0.5f;
+    private const float OTHER_RANGE_INCREASE = 1f;
+    private const float CONST_DECREASE = 0.05f; // CONST_DECREASE * Time.deltaTime (per frame)
+    private const float INITIAL_RANGE = 3f;
     
     public bool disableVR;
 
@@ -24,7 +32,7 @@ public class Controller : MonoBehaviour {
     private bool setInitialPositions = false;
     public static List<Opponent> opponents;
     public static List<string> permissibleIndividuals;
-    public static int MyCoinsOwned = 1, OtherCoinsOwned = 1;
+    public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
 
     public GameObject arrowOfVirtue;
     public int _MyCoins, _OtherCoins;
@@ -33,6 +41,9 @@ public class Controller : MonoBehaviour {
     private float boostTime = 0f;
     private float timeSpentSlowingDown = 0f;
     private float oldBoost = -1f;
+    private Buckets buckets;
+    private float luminosity = 0.2f;
+    private Light light;
 
     void Start() {
         if (disableVR) {
@@ -42,6 +53,7 @@ public class Controller : MonoBehaviour {
         else {
             //
         }
+        buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
         opponents = new List<Opponent>();
         permissibleIndividuals = new List<string>();
         opponents.Add(GameObject.Find("Player_1").GetComponent<Opponent>());
@@ -54,13 +66,14 @@ public class Controller : MonoBehaviour {
         socket.On("update", OnSocketUpdate);
         socket.On("give", HandleGenerosity);
         socket.On("getOut", HandleRejection);
+        light = GameObject.Find("My Light").GetComponent<Light>();
     }
 
     void HandleRejection(SocketIOEvent e) {
         //TODO Thank you screen, etc.
     }
 
-    void displayCoins() {
+    void _displayCoins() {
         _MyCoins = MyCoinsOwned;
         _OtherCoins = OtherCoinsOwned;
     }
@@ -69,6 +82,7 @@ public class Controller : MonoBehaviour {
         Dictionary<string, string> res = e.data.ToDictionary();
         myId = res["id"];
         transform.localPosition = DeserializeVector3(e.data["position"]);
+        //TODO Initial rotation vectors
         Opponent.UPDATE_INTERVAL = float.Parse(res["interval"]);
         JSONObject topologyArray = e.data["topology"][myId];
         permissibleIndividuals.Clear();
@@ -76,13 +90,15 @@ public class Controller : MonoBehaviour {
             permissibleIndividuals.Add(topologyArray[i].str);
         }
 
-        Endzone.Finished = false;
+        Endzone.Finished = false; //TODO Delete all this endzone code
         Endzone.OthersFinished = 0;
         MyCoinsOwned = 0;
         OtherCoinsOwned = 0;
+        light.range = INITIAL_RANGE;
     }
 
     void ShowGenerosity(Opponent opponent) {
+        //TODO maybe don't allow sharing by clicking on person
         string to = opponent.GetId();
         if (MyCoinsOwned == 0 || !permissibleIndividuals.Contains(to)) return;
 
@@ -103,14 +119,14 @@ public class Controller : MonoBehaviour {
             //TODO Animation of receiving a coin
         }
         else {
-            VirtueSignal(getOpponentById(data["from"]), getOpponentById(data["to"]));
+            VirtueSignal(GetOpponentById(data["from"]), GetOpponentById(data["to"]));
         }
     }
 
     void VirtueSignal(Opponent from, Opponent to) {
         Vector3 fromVec = from.transform.localPosition;
         Vector3 toVec = to.transform.localPosition;
-        GameObject inst = Instantiate(arrowOfVirtue); //A loud statement of humility
+        GameObject inst = Instantiate(arrowOfVirtue); 
         inst.transform.LookAt(toVec - fromVec);
         Vector3 currScale = inst.transform.localScale;
         currScale.z = Vector3.Distance(fromVec, toVec) - to.transform.localScale.x * 1.5f; // Width of player objects
@@ -121,7 +137,7 @@ public class Controller : MonoBehaviour {
     }
     
     
-    Opponent getOpponentById(string id) {
+    Opponent GetOpponentById(string id) {
         foreach (Opponent o in opponents) {
             if (o.GetId().Equals(id)) {
                 return o;
@@ -151,6 +167,7 @@ public class Controller : MonoBehaviour {
         JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
         send.AddField("position", SerializeVector3(transform.localPosition));
         send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
+        send.AddField("range", light.range);
         socket.Emit("update", send);
     }
     
@@ -192,8 +209,24 @@ public class Controller : MonoBehaviour {
         );
     }
 
+    public void AdjustMyLight() {
+        if (light.range > MIN_RANGE) {
+            light.range -= CONST_DECREASE * Time.deltaTime;
+        }
+
+        if (MyCoinsOwned > 0) {
+            MyCoinsOwned--;
+            light.range += OWN_RANGE_INCREASE;
+        }
+        if (OtherCoinsOwned > 0) {
+            OtherCoinsOwned--;
+            light.range += OTHER_RANGE_INCREASE;
+        }
+    }
+
     // Update is called once per frame
     void Update() {
+        AdjustMyLight(); //TODO Adjust their lights
         if (!disableVR) {
             if (OVRInput.GetDown(OVRInput.Button.One)) {
                 //A button pressed, right controller:
@@ -218,7 +251,7 @@ public class Controller : MonoBehaviour {
             }
         }
         else {
-            displayCoins();
+            _displayCoins();
             if (Input.GetKey(KeyCode.RightArrow)) {
                 transform.localEulerAngles += Vector3.up;
             }
@@ -248,14 +281,16 @@ public class Controller : MonoBehaviour {
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, 100)) {
+                if (Physics.Raycast(ray, out hit)) {
                     if (hit.transform.tag.Equals("Not Me")) {
                         ShowGenerosity(hit.transform.GetComponent<Opponent>());
+                    } else if (hit.transform.tag.Equals("Bucket")) {
+                        buckets.HandleClick(hit.transform);
                     }
                 }
             }
         }
-        
+
         if (flying) {
             Fly(speed * Time.deltaTime * currBoost);
             if (boostTime > 0f) {
@@ -275,6 +310,12 @@ public class Controller : MonoBehaviour {
                 }
             }
         }
+    }
+    
+    public static void LogMessage(string s) {
+        JSONObject msg = new JSONObject(JSONObject.Type.OBJECT);
+        msg.AddField("Message", s);
+        socket.Emit("log", msg);
     }
 
     // "fly" meaning translate position in direction camera is facing

@@ -2,6 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const http = require('http');
 const socketIO = require('socket.io');
+//mee
+var generation = require('./generation');
+
 //const fs = require('fs');
 
 const port = process.env.PORT || 4001;
@@ -14,10 +17,25 @@ io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
 const UPDATE_INTERVAL = 150; // (In milliseconds)
+const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
+const COINS_PER_PLAYER = 50;
+const NUM_CLUMPS = 10; //(per player);
 var users = {}; //id as index, position and rotation stored
 var coinCount = {}; //id -> numOwnCoins, numOtherCoins
 
 var coins = {}; //id: coins: [vec1, vec2, ...].
+var MAP_ORIGIN = { 
+	x: -4.88, 
+	y: 4.5976, //-0.98 = old y
+	z: -0.978
+};
+var MAP_SCALE = { 
+	//x: 10.0,
+	//z: 18.296 
+	x: 100.0,
+	z: 100.0,
+}; //Generate on 2D surface, raise y according to terrain dim
+
 /*
  * ^This doesn't update every update interval, 
  * but every time a client requests a coin they run into,
@@ -26,7 +44,7 @@ var coins = {}; //id: coins: [vec1, vec2, ...].
  */
 
 var trial = 0; //Will be incremented, used to choose network topology
-var endzone = {}; //each entry = {id: finished (true/false)}
+//var endzone = {}; //each entry = {id: finished (true/false)} //Each game is timed now
 var game_num = 0; 
 /*
  * TODO Initialize value of game_num based on database entry of games
@@ -43,6 +61,7 @@ io.on('connection', (socket) => {
 			users[socket.id] = data;
 		});
 
+		/*
 		socket.on('finish', () => {
 			// Keep count of users done, if == GAME_SIZE and trial <= 2, call start method,
 			// otherwise, set trial = 0, disconnect everyone
@@ -66,6 +85,7 @@ io.on('connection', (socket) => {
 				}
 			}
 		});
+		*/
 
 		socket.on('disconnect', () => {
 			//delete users[socket.id]; //TODO Uncomment these lines, broadcast to everybody that somebody left and experiment's over
@@ -74,16 +94,21 @@ io.on('connection', (socket) => {
 		});
 
 		socket.on('collect', (data) => {
-			coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
+			//coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
 			for (let id of Object.keys(users)) {
 				if (id != socket.id) {
 					io.to(id).emit('tellCollect', {index: data.index});
 				}
 			}
+			//TODO Coin regeneration after random time
+		});
+
+		socket.on('claim', () => {
+			coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
 		});
 
 		socket.on('give', (data) => {
-			coinCount[socket.id].numOwnCoins--;
+			//coinCount[socket.id].numOwnCoins--;  //Not necessary w/ bucket method
 			coinCount[data.id].numOtherCoins == undefined ? coinCount[data.id].numOtherCoins = 1 : coinCount[data.id].numOtherCoins++;
 			// So the coin giver can publicly virtue signal via animation to the one other person,
 			// or, coin receiver can know (if data.to == their id)
@@ -104,10 +129,10 @@ io.on('connection', (socket) => {
 			update();
 			sendCoins();
 
-			//TEST CODE HERE:
+			///TEST CODE HERE:
 			//let ids = Object.keys(users);
 			//io.to(ids[2]).emit('give', {from: ids[1], to: ids[0]});
-			//END TESTING
+			///END TESTING
 		}
 	}
 });
@@ -131,18 +156,40 @@ const start = () => {
 			topology: getTopology(Object.keys(users), trial),
 		}); //<-- Tell each person their own id
 
+		/*
 		coins[id] = [
 			{x: 0.1 + shift, y: 0.5, z: 0.1 + shift},
 			{x: 0.2 + shift, y: 0.6, z: 0.4 + shift}
 		];
 		shift += 1.2;
+		*/
 	}
+	coins = generation.generate(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	trial++;
+	setTimeout(nextRound, GAME_LENGTH);
 }
 
 const sendCoins = () => {
 	for (let id of Object.keys(users)) {
 		io.to(id).emit('coins', coins);
+	}
+}
+
+const nextRound = () => {
+	// Keep count of users done, if == GAME_SIZE and trial <= 2, call start method,
+	// otherwise, set trial = 0, disconnect everyone
+	//Start new game
+	console.log("Round " + trial + " over");
+	if (trial <= 2) {
+		start();
+		sendCoins();
+	} else { //All 3 trials done, notify everyone, break socket connections.
+		all_ids = Object.keys(users);
+		for (let id of all_ids) {
+			io.to(id).emit('getOut');
+		}
+		trial = 0;
+		game_num++;
 	}
 }
 

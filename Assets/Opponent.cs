@@ -14,17 +14,18 @@ public class Opponent : MonoBehaviour {
     private Quaternion targetRotation;
     private float timeSinceUpdate = -1f;
     private Color color = Color.white;
-    void Start() { }
+    private Light light;
+
+    void Start() {
+        light = transform.GetChild(0).GetComponent<Light>();
+    }
 
     // Update is called once per frame
     void Update() {
         if (timeSinceUpdate > -1f) {
-            //timeSinceUpdate += Time.deltaTime;
-            //float lerpFactor = timeSinceUpdate / UPDATE_INTERVAL;
             float lerpFactor = Time.deltaTime / (UPDATE_INTERVAL);
             transform.localPosition = Vector3.Lerp(transform.localPosition, targetPosition, lerpFactor);
             transform.localRotation = Quaternion.Lerp(transform.localRotation, targetRotation, lerpFactor);
-            //realInterval += Time.deltaTime;
         }
     }
 
@@ -54,14 +55,16 @@ public class Opponent : MonoBehaviour {
         JSONObject myData = data[id];
         JSONObject pos = myData["position"];
         JSONObject rot = myData["rotation"];
+        light.range = myData["range"].f; //TODO Lerp?
         //Controller.socket.Emit("log", pos);
 
-        targetPosition = Controller.DeserializeVector3(pos); 
+        targetPosition = Controller.DeserializeVector3(pos); //+ new Vector3(4, 0, 0);
         targetRotation = Controller.DeserializeQuaternion(rot);
 
         if (hardSet) {
-            transform.localPosition = targetPosition;
-            transform.localRotation = targetRotation;
+            Transform t = transform;
+            t.localPosition = targetPosition;
+            t.localRotation = targetRotation;
         }
         realInterval = 0f;
 		timeSinceUpdate = 0f;
