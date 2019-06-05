@@ -9,8 +9,16 @@ public class CoinScript : MonoBehaviour {
     public int index = -1;
     private CoinManager parent;
     private bool collided = false;
+    private float albedo = 1f;
     
     void Start() {
+    }
+
+    public void SetAlbedo(float albedo) {
+        Color curr = transform.GetChild(0).GetComponent<Renderer>().material.color;
+        curr.a = albedo;
+        transform.GetChild(0).GetComponent<Renderer>().material.color = curr;
+        this.albedo = albedo;
     }
 
     public void SetColor(Color c) {
@@ -41,6 +49,8 @@ public class CoinScript : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        
+        if (albedo < 1f) {
+            SetAlbedo(Math.Min(1f, albedo + Time.deltaTime / 4.5f));
+        }
     }
 }

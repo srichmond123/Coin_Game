@@ -11,12 +11,10 @@ using Quaternion = UnityEngine.Quaternion;
 
 
 public class Controller : MonoBehaviour {
-    //legacy code:
-    public const float MYCOIN_BOOST_FACTOR = 5.0f; //2 * speed
-    public const float OTHERCOIN_BOOST_FACTOR = 10.0f;
-    public const float BOOST_TIME = 4.0f;
-    private const float SLOWDOWN_INTERVAL = 1.0f;
-    //</legacy>
+    //public const float MYCOIN_BOOST_FACTOR = 5.0f; //2 * speed
+    //public const float OTHERCOIN_BOOST_FACTOR = 10.0f;
+    //public const float BOOST_TIME = 4.0f;
+    //private const float SLOWDOWN_INTERVAL = 1.0f;
     private const float MIN_RANGE = 1.0f;
     private const float MAX_RANGE = 20f; //Maybe infinite
     private const float OWN_RANGE_INCREASE = 0.5f;
@@ -26,7 +24,7 @@ public class Controller : MonoBehaviour {
     
     public bool disableVR;
 
-    private float speed = 0.25f;
+    private float speed = 4f;
     public static SocketIOComponent socket;
     public static string myId;
     private bool setInitialPositions = false;
@@ -38,12 +36,12 @@ public class Controller : MonoBehaviour {
     public int _MyCoins, _OtherCoins;
     private bool flying = true;
     private float currBoost = 1f;
-    private float boostTime = 0f;
+    //private float boostTime = 0f;
     private float timeSpentSlowingDown = 0f;
-    private float oldBoost = -1f;
+    //private float oldBoost = -1f;
     private Buckets buckets;
     private float luminosity = 0.2f;
-    private Light light;
+    private Light light; //TODO other lights don't light up your own coins
 
     void Start() {
         if (disableVR) {
@@ -94,6 +92,8 @@ public class Controller : MonoBehaviour {
         Endzone.OthersFinished = 0;
         MyCoinsOwned = 0;
         OtherCoinsOwned = 0;
+
+        //TODO initial rotation (random or facing forward always)
         light.range = INITIAL_RANGE;
     }
 
@@ -137,7 +137,7 @@ public class Controller : MonoBehaviour {
     }
     
     
-    Opponent GetOpponentById(string id) {
+    public static Opponent GetOpponentById(string id) {
         foreach (Opponent o in opponents) {
             if (o.GetId().Equals(id)) {
                 return o;
@@ -235,11 +235,6 @@ public class Controller : MonoBehaviour {
             }
             else if (OVRInput.Get(OVRInput.Button.Two)) {
                 flying = true;
-                if (OtherCoinsOwned > 0) { //Use large boost first: TODO choose coin to boost on option?
-                    Boost(OTHERCOIN_BOOST_FACTOR);
-                } else if (MyCoinsOwned > 0) {
-                    Boost(MYCOIN_BOOST_FACTOR);
-                } //Else do nothing, user owns no coins, TODO maybe show no coin error
             }
 
             if (OVRInput.GetUp(OVRInput.Button.Two)) {
@@ -267,11 +262,6 @@ public class Controller : MonoBehaviour {
 
             if (Input.GetKey(KeyCode.W)) {
                 flying = true;
-                if (OtherCoinsOwned > 0) {
-                    Boost(OTHERCOIN_BOOST_FACTOR);
-                } else if (MyCoinsOwned > 0) {
-                    Boost(MYCOIN_BOOST_FACTOR);
-                }
             }
             if (Input.GetKeyDown(KeyCode.S)) {
                 flying = !flying;
@@ -292,8 +282,8 @@ public class Controller : MonoBehaviour {
         }
 
         if (flying) {
-            Fly(speed * Time.deltaTime * currBoost);
-            if (boostTime > 0f) {
+            Fly(speed * Time.deltaTime); // * currBoost);
+            /*if (boostTime > 0f) {
                 //TODO show progress bar of how much boost left
                 boostTime -= Time.deltaTime;
             } else {
@@ -308,7 +298,7 @@ public class Controller : MonoBehaviour {
                     currBoost = 1f;
                     oldBoost = -1f;
                 }
-            }
+            }*/
         }
     }
     
@@ -330,7 +320,7 @@ public class Controller : MonoBehaviour {
         return transform.localRotation;
     }
 
-    void Boost(float boostFactor) {
+    /*void Boost(float boostFactor) {
         if (boostTime <= 0f) {
             //User is pressing B and not currently boosting, use coin:
             if (boostFactor.Equals(MYCOIN_BOOST_FACTOR)) MyCoinsOwned--;
@@ -338,5 +328,5 @@ public class Controller : MonoBehaviour {
             boostTime = BOOST_TIME;
             currBoost = boostFactor;
         }
-    }
+    }*/
 }

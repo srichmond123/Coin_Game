@@ -17,11 +17,14 @@ io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
 const UPDATE_INTERVAL = 150; // (In milliseconds)
-const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
-const COINS_PER_PLAYER = 50;
+const GAME_LENGTH = 1000 * 60 * 1; // 10 minutes
+const COINS_PER_PLAYER = 70;
 const NUM_CLUMPS = 10; //(per player);
+const NEW_CLUMP_MIN_TIME = 2000;
+const NEW_CLUMP_MAX_TIME = 5000;
 var users = {}; //id as index, position and rotation stored
 var coinCount = {}; //id -> numOwnCoins, numOtherCoins
+var coinsToRegenerate = COINS_PER_PLAYER / NUM_CLUMPS; //Changes randomly each assignment
 
 var coins = {}; //id: coins: [vec1, vec2, ...].
 var MAP_ORIGIN = { 
@@ -50,6 +53,8 @@ var game_num = 0;
  * TODO Initialize value of game_num based on database entry of games
  * played, or txt/json file stored on local computer.
  */
+
+var coinQueue = {};
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -91,6 +96,7 @@ io.on('connection', (socket) => {
 			//delete users[socket.id]; //TODO Uncomment these lines, broadcast to everybody that somebody left and experiment's over
 			//delete endzone[socket.id];
 			//console.log('client disconnected');
+			//CLEAR UPDATE INTERVAL
 		});
 
 		socket.on('collect', (data) => {
@@ -100,15 +106,36 @@ io.on('connection', (socket) => {
 					io.to(id).emit('tellCollect', {index: data.index});
 				}
 			}
-			//TODO Coin regeneration after random time
+
+			coins[socket.id][data.index] = undefined;
+			if (coinQueue[socket.id] == undefined) {
+				coinQueue[socket.id] = [];
+			}
+			coinQueue[socket.id].push(data.index);
+			if (coinQueue[socket.id].length >= coinsToRegenerate) {
+				let indices = coinQueue[socket.id];
+				coinQueue[socket.id] = [];
+				let positions = generation.generateClump(indices.length, MAP_ORIGIN, MAP_SCALE);
+				//setTimeout(() => {
+				for (let idx of indices) {
+					let pos = positions.pop();
+					setTimeout((position, index, myId) => {
+						coins[myId][index] = position;
+						for (let id of Object.keys(users)) {
+							io.to(id).emit('newCoin', {id: myId, position: position, index: index});
+						}
+					}, getRandomInt(NEW_CLUMP_MIN_TIME, NEW_CLUMP_MAX_TIME), pos, idx, socket.id);
+				}
+				//}, 10000); //getRandomInt(NEW_CLUMP_MIN_TIME, NEW_CLUMP_MAX_TIME));
+				coinsToRegenerate = getRandomInt(COINS_PER_PLAYER / NUM_CLUMPS - 3, COINS_PER_PLAYER / NUM_CLUMPS + 3);
+			}
 		});
 
-		socket.on('claim', () => {
+		socket.on('claim', () => { //Only for data collection purposes, coin disappears for teammates on collect:
 			coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
 		});
 
 		socket.on('give', (data) => {
-			//coinCount[socket.id].numOwnCoins--;  //Not necessary w/ bucket method
 			coinCount[data.id].numOtherCoins == undefined ? coinCount[data.id].numOtherCoins = 1 : coinCount[data.id].numOtherCoins++;
 			// So the coin giver can publicly virtue signal via animation to the one other person,
 			// or, coin receiver can know (if data.to == their id)
@@ -140,6 +167,12 @@ io.on('connection', (socket) => {
 server.listen(port, () => console.log(`listening on port ${port}`));
 
 
+function getRandomInt(min, max) { //Inclusive to min, max
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 const start = () => {
 	//shift variable below is TEST code, a placeholder for coin generation
 	let xInd = -1;
@@ -155,16 +188,8 @@ const start = () => {
 			interval: UPDATE_INTERVAL * 0.001,
 			topology: getTopology(Object.keys(users), trial),
 		}); //<-- Tell each person their own id
-
-		/*
-		coins[id] = [
-			{x: 0.1 + shift, y: 0.5, z: 0.1 + shift},
-			{x: 0.2 + shift, y: 0.6, z: 0.4 + shift}
-		];
-		shift += 1.2;
-		*/
 	}
-	coins = generation.generate(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	trial++;
 	setTimeout(nextRound, GAME_LENGTH);
 }

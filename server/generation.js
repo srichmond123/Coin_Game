@@ -1,10 +1,28 @@
-const MIN_DIST = 0.3; //Absolute coordinates (necessary due to abs size of coin prefab)
-const GRAVITY_STRENGTH = 0.02;
-const CLUMP_RADIUS = 0.1; //0 to 1 scale
+//const MIN_DIST = 0.3; //Absolute coordinates (necessary due to abs size of coin prefab)
+//const GRAVITY_STRENGTH = 0.02;
+const CLUMP_RADIUS = 0.10; //0 to 1 scale
 
 module.exports = {
-	generate: (amount_per, num_clumps, ids, origin, scale) => {
+	generateAll: (amount_per, num_clumps, ids, origin, scale) => {
 		return rescale(get2DVectors(amount_per, num_clumps, ids), origin, scale);
+	},
+	generateClump: (size, origin, scale) => {
+		let positions = [{x: Math.random(), z: Math.random()}];
+		for (let i = 1; i < size; i++) {
+			//Fall near first position generated above:
+			positions.push(
+				_add({
+						x: Math.random() * CLUMP_RADIUS, 
+						z: Math.random() * CLUMP_RADIUS
+					}, 
+					positions[0]
+				)
+			);
+		}
+		for (let i = 0; i < size; i++) {
+			positions[i] = _fix(positions[i], origin, scale);
+		}
+		return positions;
 	}
 };
 
@@ -61,7 +79,6 @@ function getRandomInt(min, max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 /*
  * Resizes 2d vectors (ranging from 0 to 1), based on origin of map 
  * (3d vector) and scale vector. Returns 3d vectors:
@@ -117,6 +134,7 @@ const _magnitude = (v) => {
 	return Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.z, 2));
 }
 
+/*
 const _gravity = (distance, direction) => {
 	let f = GRAVITY_STRENGTH / (distance * distance);
 	return {
@@ -124,3 +142,4 @@ const _gravity = (distance, direction) => {
 		z: direction.z * f,
 	}
 }
+*/
