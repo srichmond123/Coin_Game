@@ -50,6 +50,10 @@ public class Opponent : MonoBehaviour {
         return id;
     }
 
+    public void SetRange(float r) {
+        light.range = r;
+    }
+
     //Turn raw server data into position, rotation for specific this.id:
     public void AdjustTransform(JSONObject data, bool hardSet) {
         JSONObject myData = data[id];
