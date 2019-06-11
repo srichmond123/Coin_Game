@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
@@ -8,36 +9,80 @@ public class Opponent : MonoBehaviour {
     public static float UPDATE_INTERVAL = 0.05f;
     public static bool colorTaken = false; //Static global allows Opponent object to handle diff opponent colors internally
     
-    private float realInterval = 0f;
     private string id = "";
-    private Vector3 targetPosition;
-    private Quaternion targetRotation;
+    private Vector3 targetPosition = Vector3.zero, oldPosition = Vector3.zero;
+    private Quaternion targetRotation = Quaternion.identity, oldRotation = Quaternion.identity;
+    private float targetTime = 0f, oldTime = 0f;
     private float timeSinceUpdate = -1f;
     private Color color = Color.white;
     private Light light;
+    private bool flying = false;
+    private List<Vector3> positionQueue;
+    private List<Quaternion> rotationQueue;
+    private List<float> timestampQueue;
+    private bool startQueue = false;
+    private float interval = 0f;
 
     void Start() {
-        light = transform.GetChild(0).GetComponent<Light>();
+        light = transform.GetComponentsInChildren<Light>()[0];
+        positionQueue = new List<Vector3>();
+        rotationQueue = new List<Quaternion>();
+        timestampQueue = new List<float>();
     }
 
     // Update is called once per frame
     void Update() {
-        if (timeSinceUpdate > -1f) {
-            float lerpFactor = Time.deltaTime / (UPDATE_INTERVAL);
-            transform.localPosition = Vector3.Lerp(transform.localPosition, targetPosition, lerpFactor);
-            transform.localRotation = Quaternion.Lerp(transform.localRotation, targetRotation, lerpFactor);
+        if (startQueue) {
+            //Take UPDATE_INTERVAL time to go from queue[0] to queue[1]:
+            if (oldPosition.Equals(Vector3.zero) || timeSinceUpdate >= interval) {
+                if (oldPosition.Equals(Vector3.zero)) {
+                    oldPosition = Pop(positionQueue, 0);
+                    oldRotation = Pop(rotationQueue, 0);
+                    oldTime = Pop(timestampQueue, 0);
+                }
+                else {
+                    Transform t = transform;
+                    oldPosition = t.localPosition;
+                    oldRotation = t.localRotation;
+                    oldTime = targetTime;
+                }
+                targetPosition = Pop(positionQueue, 0);
+                targetRotation = Pop(rotationQueue, 0);
+                targetTime = Pop(timestampQueue, 0);
+                timeSinceUpdate = Time.deltaTime;
+                interval = targetTime - oldTime;
+            }
+            transform.localPosition = Vector3.Lerp(oldPosition, targetPosition, timeSinceUpdate / interval);
+            transform.localRotation = Quaternion.Lerp(oldRotation, targetRotation, timeSinceUpdate / interval);
+            timeSinceUpdate += Time.deltaTime;
         }
     }
 
-    public void _setColor(Color c) {
+    private T Pop<T>(List<T> v, int i) {
+        T elem = v[i];
+        v.RemoveAt(i);
+        return elem;
+    }
+
+    /*private Quaternion Pop(List<Quaternion> q, int i) {
+        Quaternion elem = q[i];
+        q.RemoveAt(i);
+        return elem;
+    }*/
+
+    private void FixedUpdate() {
+        
+    }
+
+    public void _SetColor(Color c) {
         color = c;
-        transform.GetComponent<Renderer>().material.color = c;
+        transform.GetComponentsInChildren<Light>()[1].color = c;
     }
     
     public void SetId(string id) {
         this.id = id;
         if (color == Color.white) {
-            _setColor(colorTaken ? Color.red : Color.blue);
+            _SetColor(colorTaken ? Color.red : Color.blue);
             colorTaken = true;
         }
     }
@@ -56,21 +101,39 @@ public class Opponent : MonoBehaviour {
 
     //Turn raw server data into position, rotation for specific this.id:
     public void AdjustTransform(JSONObject data, bool hardSet) {
-        JSONObject myData = data[id];
+        JSONObject myData = data[Controller.myId];
+        //JSONObject myData = data[id];
         JSONObject pos = myData["position"];
         JSONObject rot = myData["rotation"];
-        light.range = myData["range"].f; //TODO Lerp?
+        light.range = myData["range"].f / 30f; //Others shouldn't illuminate much of the map
+        if (myData["flying"].b != flying) {
+            flying = myData["flying"].b;
+            if (flying) {
+                transform.GetComponentInChildren<Animation>().Play();
+            }
+            else {
+                transform.GetComponentInChildren<Animation>().Stop();
+            }
+        }
         //Controller.socket.Emit("log", pos);
 
-        targetPosition = Controller.DeserializeVector3(pos); //+ new Vector3(4, 0, 0);
-        targetRotation = Controller.DeserializeQuaternion(rot);
+        Vector3 tPosition = Controller.DeserializeVector3(pos) + new Vector3(0, 0, 10);
+        Quaternion tRotation = Controller.DeserializeQuaternion(rot);
 
+		Transform t = transform;
         if (hardSet) {
-            Transform t = transform;
-            t.localPosition = targetPosition;
-            t.localRotation = targetRotation;
+            t.localPosition = tPosition;
+            t.localRotation = tRotation;
         }
-        realInterval = 0f;
-		timeSinceUpdate = 0f;
+		oldPosition = t.localPosition;
+		oldRotation = t.localRotation;
+        positionQueue.Add(tPosition);
+        rotationQueue.Add(tRotation);
+        timestampQueue.Add(Time.time);
+        if (positionQueue.Count > 2) {
+            startQueue = true;
+        } else if (positionQueue.Count < 1) {
+            startQueue = false;
+        }
     }
 }

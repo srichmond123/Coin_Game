@@ -6,7 +6,7 @@ using SocketIO;
 using UnityEngine;
 
 public class Buckets : MonoBehaviour {
-    private int coins = 0;
+    private static int coins = 0;
     public static SocketIOComponent socket;
     public GameObject crossPrefab;
 
@@ -16,6 +16,10 @@ public class Buckets : MonoBehaviour {
         Hide();
         GameObject sockObject = GameObject.Find("SocketIO");
         socket = sockObject.GetComponent<SocketIOComponent>();
+    }
+
+    public static int GetCoinsHeld() {
+        return coins;
     }
 
     public void Handle() {
@@ -34,9 +38,11 @@ public class Buckets : MonoBehaviour {
         //crossInstance = null;
     }
 
-    private void SetAllChildrenColor(Transform t, Color c) {
+    private void SetChildColor(Transform t, Color c) {
         foreach (Transform child in t) {
-            child.GetComponent<MeshRenderer>().materials[0].color = c;
+            if (child.name.Equals("Tube01")) {
+                child.GetComponent<MeshRenderer>().materials[0].color = c;
+            }
         }
     }
 
@@ -46,7 +52,7 @@ public class Buckets : MonoBehaviour {
             child.gameObject.SetActive(true);
             if (idx == 1) {
                 if (!colorsInitialized) {
-                    SetAllChildrenColor(child, Color.green);
+                    SetChildColor(child, Color.green);
                 }
             }
             else {
@@ -60,7 +66,7 @@ public class Buckets : MonoBehaviour {
                 }
 
                 if (!colorsInitialized) {
-                    SetAllChildrenColor(child, oppSet.GetColor());
+                    SetChildColor(child, oppSet.GetColor());
                 }
             }
             idx++;
@@ -70,7 +76,13 @@ public class Buckets : MonoBehaviour {
     }
 
     private Color GetBucketColor(Transform t) {
-        return t.GetChild(0).GetComponent<MeshRenderer>().materials[0].color;
+        foreach (Transform child in t) {
+            if (child.name.Equals("Tube01")) {
+                return child.GetComponent<MeshRenderer>().materials[0].color;
+            }
+        }
+
+        return Controller.NULL_COLOR;
     }
 
     public void HandleClick(Transform t) {

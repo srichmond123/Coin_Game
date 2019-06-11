@@ -1,13 +1,24 @@
+var random = require('random');
+
 //const MIN_DIST = 0.3; //Absolute coordinates (necessary due to abs size of coin prefab)
 //const GRAVITY_STRENGTH = 0.02;
 const CLUMP_RADIUS = 0.10; //0 to 1 scale
+const DIST_AWAY_PLAYER = 0.25;
 
 module.exports = {
 	generateAll: (amount_per, num_clumps, ids, origin, scale) => {
 		return rescale(get2DVectors(amount_per, num_clumps, ids), origin, scale);
 	},
-	generateClump: (size, origin, scale) => {
-		let positions = [{x: Math.random(), z: Math.random()}];
+	generateClump: (size, origin, scale, userPosition) => {
+		let adjustedUserPosition = {
+			x: (userPosition.x - origin.x) / scale.x,
+			z: (userPosition.z - origin.z) / scale.z
+		};
+		let newPosition = {x: Math.random(), z: Math.random()};
+		while (_distance(newPosition, adjustedUserPosition) < DIST_AWAY_PLAYER) {
+			newPosition = {x: Math.random(), z: Math.random()};
+		}
+		let positions = [newPosition];
 		for (let i = 1; i < size; i++) {
 			//Fall near first position generated above:
 			positions.push(
@@ -23,8 +34,59 @@ module.exports = {
 			positions[i] = _fix(positions[i], origin, scale);
 		}
 		return positions;
+	},
+	generatePoisson: (p_mean, n_partitions, ids, origin, scale) => {
+		let final = {};
+		const poissonCallback = random.poisson(lambda = p_mean);
+		for (let id of ids) {
+			final[id] = [];
+		}
+		let idArray = getIdArray(ids, n_partitions);
+		let dim = Math.sqrt(n_partitions);
+		for (let i = 0; i < dim; i++) {
+			for (let j = 0; j < dim; j++) {
+				let currId = idArray.pop();
+				//let numCoins = Math.round(poisson.sample(p_mean));
+				let numCoins = 2 * poissonCallback();
+				for (let idx = 0; idx < numCoins; idx++) {
+					final[currId].push(_fix({
+						x: (Math.random() / dim) + i / dim,
+						z: (Math.random() / dim) + j / dim,
+					}, origin, scale));
+				}
+			}
+		}
+		return final;
 	}
 };
+
+
+/*
+ * Returns array [id1, id3, id3, id2, id1, ...],
+ * where size of array is number of partitions, and each id
+ * gets equal representation (with rounding, random shuffling).
+ */
+const getIdArray = (ids, n_partitions) => {
+	let rep = Math.floor(n_partitions / ids.length);
+	let remainder = n_partitions - (rep * ids.length);
+	let each_rep = {};
+	for (let id of ids) {
+		each_rep[id] = rep;
+	}
+	for (let i = 0; i < remainder; i++) {
+		each_rep[ids[i]]++;
+	}
+	let ret = [];
+	for (let i = 0; i < n_partitions; i++) {
+		let valid_ids = Object.keys(each_rep);
+		let picked_id = valid_ids[getRandomInt(0, valid_ids.length - 1)];
+		ret.push(picked_id);
+		if (--each_rep[picked_id] == 0) {
+			delete each_rep[picked_id];
+		}
+	}
+	return ret;
+}
 
 // Returns x, y positions of amount_per coins
 const get2DVectors = (amount_per, num_clumps, ids) => {

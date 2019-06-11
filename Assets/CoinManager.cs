@@ -11,8 +11,6 @@ public class CoinManager : MonoBehaviour {
     private List<GameObject> coins;
     private static SocketIOComponent socket;
     private Buckets buckets;
-    public int coinsBack = 0;
-    public int coinsGotten = 0;
     void Start() {
         coins = new List<GameObject>();
         GameObject sockObject = GameObject.Find("SocketIO");
@@ -39,7 +37,6 @@ public class CoinManager : MonoBehaviour {
         cs.index = idx;
         cs.SetAlbedo(0f);
         coins[idx] = inst;
-        coinsBack++;
     }
 
     void HandleOtherCollect(SocketIOEvent e) {
@@ -55,9 +52,12 @@ public class CoinManager : MonoBehaviour {
          * Instantiate each, assign each Coin object
          * an id (it will handle color internally)
          */
+        foreach (GameObject o in coins) {
+            Destroy(o);
+        }
         coins.Clear(); // Could be 2nd or 3rd round
         foreach (string id in e.data.keys) {
-            Color c = Color.magenta;
+            Color c = Controller.NULL_COLOR;
             if (!id.Equals(Controller.myId)) {
                 foreach (Opponent opp in Controller.opponents) {
                     if (opp.GetId().Equals(id)) {
@@ -76,6 +76,9 @@ public class CoinManager : MonoBehaviour {
                 inst.transform.localPosition = pos;
                 inst.GetComponent<Collider>().enabled = false;
                 inst.GetComponent<Collider>().enabled = true;
+                if (id.Equals(Controller.myId)) {
+                    inst.layer = LayerMask.NameToLayer("My Coins");
+                }
                 CoinScript cs = inst.GetComponent<CoinScript>();
                 cs.SetColor(c);
                 cs.SetId(id);
@@ -89,12 +92,12 @@ public class CoinManager : MonoBehaviour {
     public void Collect(int index) { //User collects a coin
         JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
         send.AddField("index", index);
+        send.AddField("position", Controller.SerializeVector3(Controller.GetMyPosition()));
         socket.Emit("collect", send);
         Destroy(coins[index]);
         coins[index] = null;
         buckets.Handle();
         //Controller.MyCoinsOwned++; //Not until they put in own bucket
-        coinsGotten++;
     }
 
     // Update is called once per frame

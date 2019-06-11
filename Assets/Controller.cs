@@ -11,16 +11,17 @@ using Quaternion = UnityEngine.Quaternion;
 
 
 public class Controller : MonoBehaviour {
+    public static Color NULL_COLOR = Color.magenta; //Placeholder for color I probably won't have uses for
     //public const float MYCOIN_BOOST_FACTOR = 5.0f; //2 * speed
     //public const float OTHERCOIN_BOOST_FACTOR = 10.0f;
     //public const float BOOST_TIME = 4.0f;
     //private const float SLOWDOWN_INTERVAL = 1.0f;
-    private const float MIN_RANGE = 1.0f;
-    private const float MAX_RANGE = 20f; //Maybe infinite
-    private const float OWN_RANGE_INCREASE = 0.5f;
-    private const float OTHER_RANGE_INCREASE = 1f;
-    private const float CONST_DECREASE = 0.05f; // CONST_DECREASE * Time.deltaTime (per frame)
-    private const float INITIAL_RANGE = 3f;
+    private const float MIN_RANGE = 10f;
+    private const float MAX_RANGE = 200f; //Maybe infinite
+    private const float OWN_RANGE_INCREASE = 20f;
+    private const float OTHER_RANGE_INCREASE = 40f;
+    private const float CONST_DECREASE = 2.0f; // CONST_DECREASE * Time.deltaTime (per frame)
+    private const float INITIAL_RANGE = 80f;
     
     public bool disableVR;
 
@@ -42,6 +43,7 @@ public class Controller : MonoBehaviour {
     private Buckets buckets;
     private float luminosity = 0.2f;
     private Light light; //TODO other lights don't light up your own coins
+    public static GameObject controllerGameObject;
 
     void Start() {
         if (disableVR) {
@@ -65,6 +67,7 @@ public class Controller : MonoBehaviour {
         socket.On("give", HandleGenerosity);
         socket.On("getOut", HandleRejection);
         light = GameObject.Find("My Light").GetComponent<Light>();
+        controllerGameObject = gameObject;
     }
 
     void HandleRejection(SocketIOEvent e) {
@@ -168,10 +171,13 @@ public class Controller : MonoBehaviour {
         send.AddField("position", SerializeVector3(transform.localPosition));
         send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
         send.AddField("range", light.range);
+        send.AddField("flying", flying);
         socket.Emit("update", send);
     }
-    
-    
+
+    public static Vector3 GetMyPosition() {
+        return controllerGameObject.transform.localPosition;
+    }
 
     public static JSONObject SerializeVector3(Vector3 v) {
         JSONObject res = new JSONObject(JSONObject.Type.OBJECT);
@@ -222,19 +228,20 @@ public class Controller : MonoBehaviour {
             OtherCoinsOwned--;
             light.range += OTHER_RANGE_INCREASE;
         }
+        //TODO Max range
     }
 
     // Update is called once per frame
     void Update() {
-        AdjustMyLight(); //TODO Adjust their lights
+        AdjustMyLight();
         if (!disableVR) {
             if (OVRInput.GetDown(OVRInput.Button.One)) {
                 //A button pressed, right controller:
                 //Fly(speed * Time.deltaTime);
-                flying = !flying;
-            }
-            else if (OVRInput.Get(OVRInput.Button.Two)) {
                 flying = true;
+            }
+            else if (OVRInput.GetUp(OVRInput.Button.One)) {
+                flying = false;
             }
 
             if (OVRInput.GetUp(OVRInput.Button.Two)) {
@@ -273,7 +280,7 @@ public class Controller : MonoBehaviour {
 
                 if (Physics.Raycast(ray, out hit)) {
                     if (hit.transform.tag.Equals("Not Me")) {
-                        ShowGenerosity(hit.transform.GetComponent<Opponent>());
+                        //ShowGenerosity(hit.transform.GetComponent<Opponent>());
                     } else if (hit.transform.tag.Equals("Bucket")) {
                         buckets.HandleClick(hit.transform);
                     }

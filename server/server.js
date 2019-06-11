@@ -16,8 +16,8 @@ const io = socketIO(server);
 io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
-const UPDATE_INTERVAL = 150; // (In milliseconds)
-const GAME_LENGTH = 1000 * 60 * 1; // 10 minutes
+const UPDATE_INTERVAL = 200; // (In milliseconds)
+const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
 const COINS_PER_PLAYER = 70;
 const NUM_CLUMPS = 10; //(per player);
 const NEW_CLUMP_MIN_TIME = 2000;
@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
 			users[socket.id] = data;
 		});
 
-		/*
+		/* //Not doing this anymore:
 		socket.on('finish', () => {
 			// Keep count of users done, if == GAME_SIZE and trial <= 2, call start method,
 			// otherwise, set trial = 0, disconnect everyone
@@ -115,8 +115,7 @@ io.on('connection', (socket) => {
 			if (coinQueue[socket.id].length >= coinsToRegenerate) {
 				let indices = coinQueue[socket.id];
 				coinQueue[socket.id] = [];
-				let positions = generation.generateClump(indices.length, MAP_ORIGIN, MAP_SCALE);
-				//setTimeout(() => {
+				let positions = generation.generateClump(indices.length, MAP_ORIGIN, MAP_SCALE, data.position);
 				for (let idx of indices) {
 					let pos = positions.pop();
 					setTimeout((position, index, myId) => {
@@ -126,7 +125,6 @@ io.on('connection', (socket) => {
 						}
 					}, getRandomInt(NEW_CLUMP_MIN_TIME, NEW_CLUMP_MAX_TIME), pos, idx, socket.id);
 				}
-				//}, 10000); //getRandomInt(NEW_CLUMP_MIN_TIME, NEW_CLUMP_MAX_TIME));
 				coinsToRegenerate = getRandomInt(COINS_PER_PLAYER / NUM_CLUMPS - 3, COINS_PER_PLAYER / NUM_CLUMPS + 3);
 			}
 		});
@@ -177,6 +175,7 @@ const start = () => {
 	//shift variable below is TEST code, a placeholder for coin generation
 	let xInd = -1;
 	let shift = 0;
+	let topology = getTopology(Object.keys(users), trial);
 	for (let id of Object.keys(users)) {
 		io.to(id).emit('start', {
 			id: id,
@@ -186,10 +185,14 @@ const start = () => {
 				z: 0,
 			},
 			interval: UPDATE_INTERVAL * 0.001,
-			topology: getTopology(Object.keys(users), trial),
+			topology
 		}); //<-- Tell each person their own id
+		coinCount[id].numOwnCoins = 0;
+		coinCount[id].numOtherCoins = 0;
 	}
-	coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	//coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	coins = generation.generatePoisson(1, 100, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	coinQueue = {};
 	trial++;
 	setTimeout(nextRound, GAME_LENGTH);
 }
@@ -219,30 +222,42 @@ const nextRound = () => {
 }
 
 //Returns object of ids as key, values = array of ids they can communicate with:
-const getTopology = (ids, trial) => {
+const getTopology = (ids, trial) => { //TODO mix up due to finishing tutorial time confound:
 	let ret = {};
+	let randIds = shuffle(ids);
 	top_idx = getTopologyIndex(trial, game_num);
 	switch (top_idx) {
 		case 0: {
-			ret[ids[0]] = [ids[1]];
-			ret[ids[1]] = [ids[2]];
-			ret[ids[2]] = [ids[0]];
+			ret[randIds[0]] = [randIds[1]];
+			ret[randIds[1]] = [randIds[2]];
+			ret[randIds[2]] = [randIds[0]];
 			break;
 		}
 		case 1: {
-			ret[ids[0]] = [ids[1]];
-			ret[ids[1]] = [ids[0], ids[2]];
-			ret[ids[2]] = [ids[0]];
+			ret[randIds[0]] = [randIds[1]];
+			ret[randIds[1]] = [randIds[0], randIds[2]];
+			ret[randIds[2]] = [randIds[0]];
 			break;
 		}
 		case 2: {
-			ret[ids[0]] = [ids[1], ids[2]];
-			ret[ids[1]] = [ids[0], ids[2]];
-			ret[ids[2]] = [ids[0], ids[1]];
+			ret[randIds[0]] = [randIds[1], randIds[2]];
+			ret[randIds[1]] = [randIds[0], randIds[2]];
+			ret[randIds[2]] = [randIds[0], randIds[1]];
 			break;
 		}
 	}
 	return ret;
+}
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
 }
 
 let _arrangements = [
