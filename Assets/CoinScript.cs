@@ -40,7 +40,7 @@ public class CoinScript : MonoBehaviour {
         if (!collided) {
             if (other.gameObject.tag.Equals("Me") 
                 && Controller.myId == id
-                && Buckets.GetCoinsHeld() < 1) {
+                && Controller.buckets.GetCoinsHeld() < 1) {
                 parent.Collect(index);
                 collided = true;
             }

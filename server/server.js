@@ -55,6 +55,8 @@ var game_num = 0;
  */
 
 var coinQueue = {};
+var gameScore = 0;
+const GOAL = 5;
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -103,10 +105,20 @@ io.on('connection', (socket) => {
 			//coinCount[socket.id].numOwnCoins == undefined ? coinCount[socket.id].numOwnCoins = 1 : coinCount[socket.id].numOwnCoins++;
 			for (let id of Object.keys(users)) {
 				if (id != socket.id) {
-					io.to(id).emit('tellCollect', {index: data.index});
+					io.to(id).emit('tellCollect', {id: socket.id, index: data.index});
 				}
 			}
 
+			if (++gameScore == GOAL) {
+				nextRound();
+			}
+
+			let res = generation.generateSingleCorrelated(coins, socket.id, data.index, MAP_ORIGIN, MAP_SCALE);
+			coins[socket.id][data.index] = res;
+			for (let id of Object.keys(users)) { //TODO delay
+				io.to(id).emit('newCoin', { id: socket.id, position: coins[socket.id][data.index], index: data.index });
+			}
+			/*
 			coins[socket.id][data.index] = undefined;
 			if (coinQueue[socket.id] == undefined) {
 				coinQueue[socket.id] = [];
@@ -127,6 +139,7 @@ io.on('connection', (socket) => {
 				}
 				coinsToRegenerate = getRandomInt(COINS_PER_PLAYER / NUM_CLUMPS - 3, COINS_PER_PLAYER / NUM_CLUMPS + 3);
 			}
+			*/
 		});
 
 		socket.on('claim', () => { //Only for data collection purposes, coin disappears for teammates on collect:
@@ -191,10 +204,10 @@ const start = () => {
 		coinCount[id].numOtherCoins = 0;
 	}
 	//coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
-	coins = generation.generatePoisson(1, 100, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	coins = generation.generateCorrelatedRandom(COINS_PER_PLAYER, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	//coins = generation.generatePoisson(1, 100, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	coinQueue = {};
-	trial++;
-	setTimeout(nextRound, GAME_LENGTH);
+	//setTimeout(nextRound, GAME_LENGTH);
 }
 
 const sendCoins = () => {
@@ -208,16 +221,18 @@ const nextRound = () => {
 	// otherwise, set trial = 0, disconnect everyone
 	//Start new game
 	console.log("Round " + trial + " over");
-	if (trial <= 2) {
+	gameScore = 0;
+	if (trial < 2) {
 		start();
 		sendCoins();
+		trial++;
 	} else { //All 3 trials done, notify everyone, break socket connections.
 		all_ids = Object.keys(users);
 		for (let id of all_ids) {
 			io.to(id).emit('getOut');
 		}
 		trial = 0;
-		game_num++;
+		game_num++; //TODO server start command argument for game_num
 	}
 }
 

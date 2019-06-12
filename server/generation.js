@@ -2,12 +2,14 @@ var random = require('random');
 
 //const MIN_DIST = 0.3; //Absolute coordinates (necessary due to abs size of coin prefab)
 //const GRAVITY_STRENGTH = 0.02;
-const CLUMP_RADIUS = 0.10; //0 to 1 scale
+const CLUMP_RADIUS = 0.06; //0 to 1 scale
 const DIST_AWAY_PLAYER = 0.25;
+
+const PROB_ATTRACTED = 0.4;
 
 module.exports = {
 	generateAll: (amount_per, num_clumps, ids, origin, scale) => {
-		return rescale(get2DVectors(amount_per, num_clumps, ids), origin, scale);
+		return rescale(get2DClumpVectors(amount_per, num_clumps, ids), origin, scale);
 	},
 	generateClump: (size, origin, scale, userPosition) => {
 		let adjustedUserPosition = {
@@ -57,6 +59,27 @@ module.exports = {
 			}
 		}
 		return final;
+	},
+	generateCorrelatedRandom: (amount_per, ids, origin, scale) => {
+		return rescale(get2DCorrelatedVectors(amount_per, ids), origin, scale);
+	},
+	generateSingleCorrelated: (coins, id, index, origin, scale) => {
+		if (Math.random() < PROB_ATTRACTED) {
+			let picked_position;
+			while (!picked_position) {
+				picked_position = coins[id][getRandomInt(0, coins[id].length - 1)];
+			}
+			return _add(picked_position, {
+				x: Math.random() * CLUMP_RADIUS * scale.x,
+				y: 0,
+				z: Math.random() * CLUMP_RADIUS * scale.z
+			});
+		} else {
+			return _fix({
+				x: Math.random(),
+				z: Math.random()
+			}, origin, scale);
+		}
 	}
 };
 
@@ -88,8 +111,32 @@ const getIdArray = (ids, n_partitions) => {
 	return ret;
 }
 
+const get2DCorrelatedVectors = (amount_per, ids) => {
+	let final = {};
+	for (let id of ids) {
+		final[id] = [];
+		for (let i = 0; i < amount_per; i++) {
+			if (i > 0 && Math.random() <= PROB_ATTRACTED) {
+				// Pick random coin position:
+				const picked_position = final[id][getRandomInt(0, final[id].length - 1)];
+				final[id].push(_add({
+					x: Math.random() * CLUMP_RADIUS,
+					z: Math.random() * CLUMP_RADIUS
+				}, picked_position));
+			} else {
+				// Pick uniform random position:
+				final[id].push({ 
+					x: Math.random(),
+					z: Math.random() 
+				});
+			}
+		}
+	}
+	return final;
+}
+
 // Returns x, y positions of amount_per coins
-const get2DVectors = (amount_per, num_clumps, ids) => {
+const get2DClumpVectors = (amount_per, num_clumps, ids) => {
 	let final = {};
 	for (let id of ids) {
 		final[id] = [];

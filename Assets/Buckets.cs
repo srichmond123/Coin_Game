@@ -6,7 +6,7 @@ using SocketIO;
 using UnityEngine;
 
 public class Buckets : MonoBehaviour {
-    private static int coins = 0;
+    private int coins = 0;
     public static SocketIOComponent socket;
     public GameObject crossPrefab;
 
@@ -18,10 +18,6 @@ public class Buckets : MonoBehaviour {
         socket = sockObject.GetComponent<SocketIOComponent>();
     }
 
-    public static int GetCoinsHeld() {
-        return coins;
-    }
-
     public void Handle() {
         if (coins == 0) {
             Show();
@@ -30,11 +26,16 @@ public class Buckets : MonoBehaviour {
         coins += 1;
     }
 
-    private void Hide() {
+    public int GetCoinsHeld() {
+        return coins;
+    }
+
+    public void Hide() {
         foreach (Transform child in transform) {
             child.gameObject.SetActive(false);
         }
         Destroy(crossInstance);
+        coins = 0;
         //crossInstance = null;
     }
 
@@ -46,7 +47,7 @@ public class Buckets : MonoBehaviour {
         }
     }
 
-    private void Show() {
+    private void Show() { //TODO show where user is facing in VR, then keep position still (disorienting).
         int idx = 0;
         foreach (Transform child in transform) {
             child.gameObject.SetActive(true);
@@ -85,6 +86,38 @@ public class Buckets : MonoBehaviour {
         return Controller.NULL_COLOR;
     }
 
+    //Apply shift with scale:
+    public void ScaleTo(Transform bar, float newScaleY) {
+        Vector3 localScale = bar.localScale;
+        float oldScaleY = localScale.y;
+        float positionChange = -(newScaleY - oldScaleY)/2f;
+        bar.localPosition += -positionChange * Vector3.up;
+        localScale.y = newScaleY;
+        bar.localScale = localScale;
+    }
+
+    public void UpdateHealth() {
+        foreach (Transform child in transform) {
+            Color bucketColor = GetBucketColor(child);
+            Transform bar = null;
+            if (bucketColor.Equals(Color.green)) {
+                bar = child.GetChild(child.childCount - 1);
+                ScaleTo(bar, Controller.light.range / 50f);
+            }
+            else {
+                foreach (Opponent o in Controller.opponents) {
+                    if (GetBucketColor(child).Equals(o.GetColor())) {
+                        bar = child.GetChild(child.childCount - 1);
+                        ScaleTo(bar, o.GetRange() / 50f);
+                        //Vector3 scale = bar.localScale;
+                        //scale.y = o.GetRange() / 50f;
+                        //bar.localScale = scale;
+                    }
+                }
+            }
+        }
+    }
+
     public void HandleClick(Transform t) {
         Color c = GetBucketColor(t);
         
@@ -100,6 +133,7 @@ public class Buckets : MonoBehaviour {
                             Dictionary<string, string> dict = new Dictionary<string, string>();
                             dict["id"] = opp.GetId();
                             socket.Emit("give", new JSONObject(dict));
+                            opp.OtherCoins++;
                         }
                         else {
                             return;

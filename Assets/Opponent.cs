@@ -22,6 +22,7 @@ public class Opponent : MonoBehaviour {
     private List<float> timestampQueue;
     private bool startQueue = false;
     private float interval = 0f;
+    public int Score = 0, MyCoins = 0, OtherCoins = 0;
 
     void Start() {
         light = transform.GetComponentsInChildren<Light>()[0];
@@ -33,8 +34,8 @@ public class Opponent : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if (startQueue) {
-            //Take UPDATE_INTERVAL time to go from queue[0] to queue[1]:
-            if (oldPosition.Equals(Vector3.zero) || timeSinceUpdate >= interval) {
+            //Take interval time to go from queue[0] to queue[1]:
+            if (timeSinceUpdate >= interval || oldPosition.Equals(Vector3.zero)) {
                 if (oldPosition.Equals(Vector3.zero)) {
                     oldPosition = Pop(positionQueue, 0);
                     oldRotation = Pop(rotationQueue, 0);
@@ -64,16 +65,6 @@ public class Opponent : MonoBehaviour {
         return elem;
     }
 
-    /*private Quaternion Pop(List<Quaternion> q, int i) {
-        Quaternion elem = q[i];
-        q.RemoveAt(i);
-        return elem;
-    }*/
-
-    private void FixedUpdate() {
-        
-    }
-
     public void _SetColor(Color c) {
         color = c;
         transform.GetComponentsInChildren<Light>()[1].color = c;
@@ -87,6 +78,10 @@ public class Opponent : MonoBehaviour {
         }
     }
 
+    public float GetRange() {
+        return light.range;
+    }
+
     public Color GetColor() {
         return color;
     }
@@ -95,17 +90,13 @@ public class Opponent : MonoBehaviour {
         return id;
     }
 
-    public void SetRange(float r) {
-        light.range = r;
-    }
-
     //Turn raw server data into position, rotation for specific this.id:
     public void AdjustTransform(JSONObject data, bool hardSet) {
-        JSONObject myData = data[Controller.myId];
-        //JSONObject myData = data[id];
+        //JSONObject myData = data[Controller.myId];
+        JSONObject myData = data[id];
         JSONObject pos = myData["position"];
         JSONObject rot = myData["rotation"];
-        light.range = myData["range"].f / 30f; //Others shouldn't illuminate much of the map
+        light.range = myData["range"].f;
         if (myData["flying"].b != flying) {
             flying = myData["flying"].b;
             if (flying) {
@@ -117,7 +108,7 @@ public class Opponent : MonoBehaviour {
         }
         //Controller.socket.Emit("log", pos);
 
-        Vector3 tPosition = Controller.DeserializeVector3(pos) + new Vector3(0, 0, 10);
+        Vector3 tPosition = Controller.DeserializeVector3(pos);
         Quaternion tRotation = Controller.DeserializeQuaternion(rot);
 
 		Transform t = transform;

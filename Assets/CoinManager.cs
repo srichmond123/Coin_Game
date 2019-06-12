@@ -11,11 +11,13 @@ public class CoinManager : MonoBehaviour {
     private List<GameObject> coins;
     private static SocketIOComponent socket;
     private Buckets buckets;
+    private TerrainScript terrainScript;
     void Start() {
         coins = new List<GameObject>();
         GameObject sockObject = GameObject.Find("SocketIO");
         socket = sockObject.GetComponent<SocketIOComponent>();
         buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
+        terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
         socket.On("coins", HandleCoins);
         socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
         socket.On("newCoin", HandleNewCoin);
@@ -26,7 +28,8 @@ public class CoinManager : MonoBehaviour {
         Vector3 position = Controller.DeserializeVector3(e.data["position"]);
         int idx = (int) e.data["index"].n;
         GameObject inst = Instantiate(coinPrefab);
-        inst.transform.localPosition = position;
+        position.y = terrainScript.transform.localPosition.y + 1.2f;
+        inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);;
         inst.GetComponent<Collider>().enabled = false;
         inst.GetComponent<Collider>().enabled = true;
         CoinScript cs = inst.GetComponent<CoinScript>();
@@ -45,6 +48,8 @@ public class CoinManager : MonoBehaviour {
         int idx = int.Parse(res["index"]);
         Destroy(coins[idx]);
         coins[idx] = null;
+        Controller.GetOpponentById(res["id"]).Score++;
+        Controller.UpdateScore();
     }
 
     void HandleCoins(SocketIOEvent e) {
@@ -73,7 +78,8 @@ public class CoinManager : MonoBehaviour {
             for (int i = 0; i < arr.Count; i++) {
                 Vector3 pos = Controller.DeserializeVector3(arr[i]);
                 GameObject inst = Instantiate(coinPrefab);
-                inst.transform.localPosition = pos;
+                pos.y = terrainScript.transform.localPosition.y + 1.2f;
+                inst.transform.localPosition = pos + Vector3.up * terrainScript.GetHeightAt(pos);;
                 inst.GetComponent<Collider>().enabled = false;
                 inst.GetComponent<Collider>().enabled = true;
                 if (id.Equals(Controller.myId)) {
@@ -97,7 +103,8 @@ public class CoinManager : MonoBehaviour {
         Destroy(coins[index]);
         coins[index] = null;
         buckets.Handle();
-        //Controller.MyCoinsOwned++; //Not until they put in own bucket
+        Controller.MyScore++;
+        Controller.UpdateScore();
     }
 
     // Update is called once per frame

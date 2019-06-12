@@ -7,6 +7,8 @@ using UnityEngine;
 using UnityEngine.XR;
 using Vector3 = UnityEngine.Vector3;
 using SocketIO;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
 using Quaternion = UnityEngine.Quaternion;
 
 
@@ -32,6 +34,7 @@ public class Controller : MonoBehaviour {
     public static List<Opponent> opponents;
     public static List<string> permissibleIndividuals;
     public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
+    public static int MyScore = 0; //Score is directly related to bumping into a coin, doesn't have to do with sharing.
 
     public GameObject arrowOfVirtue;
     public int _MyCoins, _OtherCoins;
@@ -40,10 +43,11 @@ public class Controller : MonoBehaviour {
     //private float boostTime = 0f;
     private float timeSpentSlowingDown = 0f;
     //private float oldBoost = -1f;
-    private Buckets buckets;
+    public static Buckets buckets;
     private float luminosity = 0.2f;
-    private Light light; //TODO other lights don't light up your own coins
+    public static Light light; //TODO other lights don't light up your own coins
     public static GameObject controllerGameObject;
+    private static Text scoreText;
 
     void Start() {
         if (disableVR) {
@@ -68,6 +72,7 @@ public class Controller : MonoBehaviour {
         socket.On("getOut", HandleRejection);
         light = GameObject.Find("My Light").GetComponent<Light>();
         controllerGameObject = gameObject;
+        scoreText = GetComponentInChildren<Text>();
     }
 
     void HandleRejection(SocketIOEvent e) {
@@ -91,13 +96,20 @@ public class Controller : MonoBehaviour {
             permissibleIndividuals.Add(topologyArray[i].str);
         }
 
-        Endzone.Finished = false; //TODO Delete all this endzone code
-        Endzone.OthersFinished = 0;
         MyCoinsOwned = 0;
         OtherCoinsOwned = 0;
+        MyScore = 0;
+        foreach (Opponent o in opponents) {
+            o.Score = 0;
+            o.OtherCoins = 0;
+            o.MyCoins = 0;
+        }
+        buckets.Hide();
+        flying = false;
 
         //TODO initial rotation (random or facing forward always)
         light.range = INITIAL_RANGE;
+        UpdateScore();
     }
 
     void ShowGenerosity(Opponent opponent) {
@@ -117,12 +129,14 @@ public class Controller : MonoBehaviour {
          * or if e.data[to] == myId, animate from e.data[from] to me:
          */
         Dictionary<string, string> data = e.data.ToDictionary();
+        GetOpponentById(data["from"]).MyCoins--;
         if (data["to"].Equals(myId)) {
             OtherCoinsOwned++;
             //TODO Animation of receiving a coin
         }
         else {
-            VirtueSignal(GetOpponentById(data["from"]), GetOpponentById(data["to"]));
+            //VirtueSignal(GetOpponentById(data["from"]), GetOpponentById(data["to"])); //TODO uncomment virtue signaling?
+            GetOpponentById(data["to"]).OtherCoins++;
         }
     }
 
@@ -150,6 +164,15 @@ public class Controller : MonoBehaviour {
         throw new Exception("Opponent " + id + " not found.");
     }
 
+    public static void UpdateScore() {
+        int scoreSum = MyScore;
+        foreach (Opponent o in opponents) {
+            scoreSum += o.Score;
+        }
+
+        scoreText.text = scoreSum.ToString();
+    }
+
     void OnSocketUpdate(SocketIOEvent e) {
         if (opponents[0].GetId().Equals("")) { 
             //If this is the first update, assign ids:
@@ -174,6 +197,7 @@ public class Controller : MonoBehaviour {
         send.AddField("flying", flying);
         socket.Emit("update", send);
     }
+
 
     public static Vector3 GetMyPosition() {
         return controllerGameObject.transform.localPosition;
@@ -228,7 +252,10 @@ public class Controller : MonoBehaviour {
             OtherCoinsOwned--;
             light.range += OTHER_RANGE_INCREASE;
         }
+
+        RenderSettings.fogDensity = Mathf.Clamp(5f / light.range, 0.03f, 0.2f);
         //TODO Max range
+        buckets.UpdateHealth();
     }
 
     // Update is called once per frame
@@ -253,7 +280,7 @@ public class Controller : MonoBehaviour {
             }
         }
         else {
-            _displayCoins();
+            //_displayCoins();
             if (Input.GetKey(KeyCode.RightArrow)) {
                 transform.localEulerAngles += Vector3.up;
             }
