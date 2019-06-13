@@ -6,7 +6,6 @@ using Quaternion = UnityEngine.Quaternion;
 
 public class Opponent : MonoBehaviour {
     // Start is called before the first frame update
-    public static float UPDATE_INTERVAL = 0.05f;
     public static bool colorTaken = false; //Static global allows Opponent object to handle diff opponent colors internally
     
     private string id = "";
@@ -23,12 +22,14 @@ public class Opponent : MonoBehaviour {
     private bool startQueue = false;
     private float interval = 0f;
     public int Score = 0, MyCoins = 0, OtherCoins = 0;
+    private Animation animation;
 
     void Start() {
         light = transform.GetComponentsInChildren<Light>()[0];
         positionQueue = new List<Vector3>();
         rotationQueue = new List<Quaternion>();
         timestampQueue = new List<float>();
+        animation = GetComponentInChildren<Animation>();
     }
 
     // Update is called once per frame
@@ -45,21 +46,21 @@ public class Opponent : MonoBehaviour {
                     Transform t = transform;
                     oldPosition = t.localPosition;
                     oldRotation = t.localRotation;
-                    oldTime = targetTime;
+                    oldTime = targetTime + (timeSinceUpdate - interval);
                 }
                 targetPosition = Pop(positionQueue, 0);
                 targetRotation = Pop(rotationQueue, 0);
                 targetTime = Pop(timestampQueue, 0);
-                timeSinceUpdate = Time.deltaTime;
+                timeSinceUpdate = 0f;
                 interval = targetTime - oldTime;
             }
-            transform.localPosition = Vector3.Lerp(oldPosition, targetPosition, timeSinceUpdate / interval);
-            transform.localRotation = Quaternion.Lerp(oldRotation, targetRotation, timeSinceUpdate / interval);
             timeSinceUpdate += Time.deltaTime;
+            transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval);
+            transform.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
         }
     }
 
-    private T Pop<T>(List<T> v, int i) {
+    private static T Pop<T>(List<T> v, int i) {
         T elem = v[i];
         v.RemoveAt(i);
         return elem;
@@ -97,18 +98,17 @@ public class Opponent : MonoBehaviour {
         JSONObject pos = myData["position"];
         JSONObject rot = myData["rotation"];
         light.range = myData["range"].f;
-        if (myData["flying"].b != flying) {
-            flying = myData["flying"].b;
-            if (flying) {
-                transform.GetComponentInChildren<Animation>().Play();
-            }
-            else {
-                transform.GetComponentInChildren<Animation>().Stop();
-            }
-        }
-        //Controller.socket.Emit("log", pos);
+        //if (myData["flying"].b != flying) {
+        flying = myData["flying"].b;
+            //if (flying) {
+                ////animation.Play();
+            //}
+            //else {
+                ////animation.Stop();
+            //}
+        //}
 
-        Vector3 tPosition = Controller.DeserializeVector3(pos);
+        Vector3 tPosition = Controller.DeserializeVector3(pos) + new Vector3(10, 0, 10);
         Quaternion tRotation = Controller.DeserializeQuaternion(rot);
 
 		Transform t = transform;
@@ -116,8 +116,6 @@ public class Opponent : MonoBehaviour {
             t.localPosition = tPosition;
             t.localRotation = tRotation;
         }
-		oldPosition = t.localPosition;
-		oldRotation = t.localRotation;
         positionQueue.Add(tPosition);
         rotationQueue.Add(tRotation);
         timestampQueue.Add(Time.time);

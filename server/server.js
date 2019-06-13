@@ -197,7 +197,8 @@ const start = () => {
 				y: 0,
 				z: 0,
 			},
-			interval: UPDATE_INTERVAL * 0.001,
+			//interval: UPDATE_INTERVAL * 0.001,
+			goal: GOAL,
 			topology
 		}); //<-- Tell each person their own id
 		coinCount[id].numOwnCoins = 0;

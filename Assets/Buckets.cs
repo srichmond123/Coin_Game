@@ -42,7 +42,9 @@ public class Buckets : MonoBehaviour {
     private void SetChildColor(Transform t, Color c) {
         foreach (Transform child in t) {
             if (child.name.Equals("Tube01")) {
-                child.GetComponent<MeshRenderer>().materials[0].color = c;
+                Material m = child.GetComponent<MeshRenderer>().materials[0];
+                m.color = c;
+                //m.shader. //TODO make this GUI text shader so it emits light
             }
         }
     }
@@ -83,7 +85,7 @@ public class Buckets : MonoBehaviour {
             }
         }
 
-        return Controller.NULL_COLOR;
+        return Controller.NullColor;
     }
 
     //Apply shift with scale:

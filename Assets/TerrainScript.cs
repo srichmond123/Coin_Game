@@ -17,7 +17,13 @@ public class TerrainScript : MonoBehaviour {
 				Mathf.InverseLerp(0.0f, data.size.z, terrainLocalPos.z));
 		return data.GetInterpolatedHeight(normalizedPos.x, normalizedPos.y);
 	}
-	// Update is called once per frame
+
+	/*private void OnTriggerEnter (Collider other) {
+		if (other.tag.Equals("Me")) {
+			Controller.flying = false;
+		}
+	}*/
+		// Update is called once per frame
 	void Update() {
 
 	}

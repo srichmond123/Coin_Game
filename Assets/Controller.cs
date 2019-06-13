@@ -5,26 +5,35 @@ using System.Globalization;
 using System.Numerics;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.UI;
 using Vector3 = UnityEngine.Vector3;
 using SocketIO;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
 
 
 public class Controller : MonoBehaviour {
-    public static Color NULL_COLOR = Color.magenta; //Placeholder for color I probably won't have uses for
-    //public const float MYCOIN_BOOST_FACTOR = 5.0f; //2 * speed
-    //public const float OTHERCOIN_BOOST_FACTOR = 10.0f;
-    //public const float BOOST_TIME = 4.0f;
-    //private const float SLOWDOWN_INTERVAL = 1.0f;
-    private const float MIN_RANGE = 10f;
-    private const float MAX_RANGE = 200f; //Maybe infinite
-    private const float OWN_RANGE_INCREASE = 20f;
-    private const float OTHER_RANGE_INCREASE = 40f;
-    private const float CONST_DECREASE = 2.0f; // CONST_DECREASE * Time.deltaTime (per frame)
-    private const float INITIAL_RANGE = 80f;
+    public static Color NullColor => Color.magenta;
+
+    public static float MinRange => 10f;
+    public static float MaxRange => 200f; //Maybe infinite
+    public static float OwnRangeIncrease => 20f;
+    public static float OtherRangeIncrease => 40f;
+    public static float ConstDecrease => 2.0f; // ConstDecrease * Time.deltaTime (per frame)
+    public static float InitialRange => 80f;
+    public static float MaxSpeed => 4f;
+    public static float SpeedIncrement => 2.5f;
+    public static float SpeedDecrement => 4f; //Stop faster
+    public static int Goal;
+    public static bool MulticolorBar => true;
+    public static Vector3 BarOrigin = Vector3.zero;
     
+    //private const int ZeroScoreRight = 347;
+    //private const int MaxScoreRight = -200;
+    private const float MaxScale = 0.18f;
+
     public bool disableVR;
 
     private float speed = 4f;
@@ -38,16 +47,19 @@ public class Controller : MonoBehaviour {
 
     public GameObject arrowOfVirtue;
     public int _MyCoins, _OtherCoins;
-    private bool flying = true;
+    public static bool flying = false;
+    public static bool slowingDown = false;
     private float currBoost = 1f;
     //private float boostTime = 0f;
     private float timeSpentSlowingDown = 0f;
     //private float oldBoost = -1f;
     public static Buckets buckets;
     private float luminosity = 0.2f;
-    public static Light light; //TODO other lights don't light up your own coins
+    public static Light light;
     public static GameObject controllerGameObject;
     private static Text scoreText;
+    private static Transform scoreBar, redBar, greenBar, blueBar;
+    private TerrainScript terrainScript;
 
     void Start() {
         if (disableVR) {
@@ -73,6 +85,13 @@ public class Controller : MonoBehaviour {
         light = GameObject.Find("My Light").GetComponent<Light>();
         controllerGameObject = gameObject;
         scoreText = GetComponentInChildren<Text>();
+        scoreBar = GameObject.Find("Bar").transform;
+        redBar = GameObject.Find("RedBar").transform;
+        blueBar = GameObject.Find("BlueBar").transform;
+        greenBar = GameObject.Find("GreenBar").transform;
+        BarOrigin = greenBar.localPosition;
+        
+        terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
     }
 
     void HandleRejection(SocketIOEvent e) {
@@ -88,9 +107,8 @@ public class Controller : MonoBehaviour {
         Dictionary<string, string> res = e.data.ToDictionary();
         myId = res["id"];
         transform.localPosition = DeserializeVector3(e.data["position"]);
-        //TODO Initial rotation vectors
-        Opponent.UPDATE_INTERVAL = float.Parse(res["interval"]);
         JSONObject topologyArray = e.data["topology"][myId];
+        Goal = (int) e.data["goal"].n;
         permissibleIndividuals.Clear();
         for (int i = 0; i < topologyArray.Count; i++) {
             permissibleIndividuals.Add(topologyArray[i].str);
@@ -106,9 +124,11 @@ public class Controller : MonoBehaviour {
         }
         buckets.Hide();
         flying = false;
+        slowingDown = false;
 
         //TODO initial rotation (random or facing forward always)
-        light.range = INITIAL_RANGE;
+        light.range = InitialRange;
+        setInitialPositions = false;
         UpdateScore();
     }
 
@@ -150,7 +170,6 @@ public class Controller : MonoBehaviour {
         inst.transform.localScale = currScale;
         inst.transform.localPosition = toVec;
         Destroy(inst, 1.0f);
-        //TODO Show better animation, shuffle around opponents' coin values maybe 
     }
     
     
@@ -166,18 +185,56 @@ public class Controller : MonoBehaviour {
 
     public static void UpdateScore() {
         int scoreSum = MyScore;
+        int blueScore = 3, redScore = 2;
         foreach (Opponent o in opponents) {
             scoreSum += o.Score;
+            if (o.GetColor().Equals(Color.red)) {
+                redScore = 2; //o.Score;
+            }
+            else {
+                blueScore = 3;// o.Score;
+            }
         }
 
         scoreText.text = scoreSum.ToString();
+        if (!MulticolorBar) {
+            ModifyBarTransform(scoreBar, scoreSum, 0f);
+        }
+        else {
+            float blueWid = ModifyBarTransform(blueBar, blueScore, 0);
+            float redWid = ModifyBarTransform(redBar, redScore, blueWid);
+            ModifyBarTransform(greenBar, MyScore, blueWid + redWid);
+        }
+    }
+
+    static float ModifyBarTransform(Transform t, int score, float translate) {
+        /*
+        Vector2 offsetMax = rectTransform.offsetMax;
+        Vector2 offsetMin = rectTransform.offsetMin;
+        float oldX = offsetMax.x;
+        offsetMax.x = -(score * 1.0f / Goal * (MaxScoreRight - ZeroScoreRight) + ZeroScoreRight);
+        //offsetMin.x = minX;
+        rectTransform.offsetMax = offsetMax;
+        rectTransform.offsetMin = offsetMin;
+        float width = offsetMax.x - oldX;
+        Vector3 position = rectTransform.localPosition;
+        position.x = -66.5f; // + translate;
+        rectTransform.localPosition = position;
+        */
+        Vector3 scale = t.localScale;
+        Vector3 position = t.localPosition;
+        scale.x = (score * 1.0f / Goal) * MaxScale;
+        position.x = BarOrigin.x + 5f * scale.x + translate;
+        t.localPosition = position;
+        t.localScale = scale;
+        return scale.x * 10f;
     }
 
     void OnSocketUpdate(SocketIOEvent e) {
         if (opponents[0].GetId().Equals("")) { 
             //If this is the first update, assign ids:
             int ind = 0;
-            foreach (string key in e.data.keys) { // res.Keys) {
+            foreach (string key in e.data.keys) {
                 if (!key.Equals(myId)) {
                     opponents[ind++].SetId(key);
                 }
@@ -240,17 +297,17 @@ public class Controller : MonoBehaviour {
     }
 
     public void AdjustMyLight() {
-        if (light.range > MIN_RANGE) {
-            light.range -= CONST_DECREASE * Time.deltaTime;
+        if (light.range > MinRange) {
+            light.range -= ConstDecrease * Time.deltaTime;
         }
 
         if (MyCoinsOwned > 0) {
             MyCoinsOwned--;
-            light.range += OWN_RANGE_INCREASE;
+            light.range += OwnRangeIncrease;
         }
         if (OtherCoinsOwned > 0) {
             OtherCoinsOwned--;
-            light.range += OTHER_RANGE_INCREASE;
+            light.range += OtherRangeIncrease;
         }
 
         RenderSettings.fogDensity = Mathf.Clamp(5f / light.range, 0.03f, 0.2f);
@@ -298,7 +355,7 @@ public class Controller : MonoBehaviour {
                 flying = true;
             }
             if (Input.GetKeyDown(KeyCode.S)) {
-                flying = !flying;
+                bool __ = flying ? slowingDown = !slowingDown : flying = true;
             }
 
             if (Input.GetMouseButtonDown(0)) {
@@ -316,23 +373,7 @@ public class Controller : MonoBehaviour {
         }
 
         if (flying) {
-            Fly(speed * Time.deltaTime); // * currBoost);
-            /*if (boostTime > 0f) {
-                //TODO show progress bar of how much boost left
-                boostTime -= Time.deltaTime;
-            } else {
-                //Start slowing down
-                if (oldBoost < 0f) {
-                    oldBoost = currBoost;
-                }
-                boostTime = 0f;
-                if (currBoost > 1f) {
-                    currBoost -= ((oldBoost - 1f) / SLOWDOWN_INTERVAL) * Time.deltaTime;
-                } else {
-                    currBoost = 1f;
-                    oldBoost = -1f;
-                }
-            }*/
+            Fly();
         }
     }
     
@@ -342,9 +383,43 @@ public class Controller : MonoBehaviour {
         socket.Emit("log", msg);
     }
 
-    // "fly" meaning translate position in direction camera is facing
-    void Fly(float speed) {
-        transform.localPosition += transform.GetChild(0).GetChild(0).forward * speed;
+    void Fly() {
+        if (!slowingDown) {
+            if (speed < MaxSpeed) {
+                speed += SpeedIncrement * Time.deltaTime;
+            }
+        }
+        else {
+            if (speed > 0f) {
+                speed -= SpeedDecrement * Time.deltaTime;
+                if (speed <= 0f) {
+                    speed = 0f;
+                    flying = false;
+                    slowingDown = false;
+                }
+            }
+        }
+
+        float incr = speed * Time.deltaTime;
+        float heightThreshold = 0.8f; //How high user can be above terrain Y
+        Transform t = transform;
+        Vector3 forward = t.GetChild(0).GetChild(0).forward;
+        Vector3 localPosition = t.localPosition;
+        Vector3 terrainWorldPosition = terrainScript.transform.localPosition;
+        if (localPosition.y 
+            <= terrainScript.GetHeightAt(localPosition) 
+            + terrainWorldPosition.y + heightThreshold) {
+            //Colliding with terrain, so forward vec must be clamped
+            //(minimum of vec orthogonal to terrain and curr vec, assuming they might be moving away
+            //and we don't want to lock their position):
+            float nextY = terrainScript.GetHeightAt(t.localPosition + forward * incr) 
+                          + terrainWorldPosition.y + heightThreshold;
+            Vector3 nextPos = localPosition + forward * incr;
+            nextPos.y = Mathf.Max(nextY, (localPosition + forward * incr).y);
+            t.localPosition = nextPos;
+            return;
+        }
+        t.localPosition += forward * incr;
     }
 
     Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:

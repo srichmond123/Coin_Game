@@ -43,7 +43,6 @@ public class CoinManager : MonoBehaviour {
     }
 
     void HandleOtherCollect(SocketIOEvent e) {
-        //TODO maybe store 2 other players' coins
         Dictionary<string, string> res = e.data.ToDictionary();
         int idx = int.Parse(res["index"]);
         Destroy(coins[idx]);
@@ -62,7 +61,7 @@ public class CoinManager : MonoBehaviour {
         }
         coins.Clear(); // Could be 2nd or 3rd round
         foreach (string id in e.data.keys) {
-            Color c = Controller.NULL_COLOR;
+            Color c = Controller.NullColor;
             if (!id.Equals(Controller.myId)) {
                 foreach (Opponent opp in Controller.opponents) {
                     if (opp.GetId().Equals(id)) {
