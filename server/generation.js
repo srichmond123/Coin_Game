@@ -5,7 +5,11 @@ var random = require('random');
 const CLUMP_RADIUS = 0.06; //0 to 1 scale
 const DIST_AWAY_PLAYER = 0.25;
 
-const PROB_ATTRACTED = 0.4;
+const PROB_ATTRACTED = 0.6;
+
+// This num is multiplied by the proportion of empties to total (eg, 1.0 would have
+// empties have an equal chance of being picked, 1.5 would bias them to be full, 0.5 would make them half as full):
+const EMPTY_BIAS = 0.1;
 
 module.exports = {
 	generateAll: (amount_per, num_clumps, ids, origin, scale) => {
@@ -37,6 +41,7 @@ module.exports = {
 		}
 		return positions;
 	},
+	//Map divided into n_partition cells, each cell has a poisson sampled number of coins
 	generatePoisson: (p_mean, n_partitions, ids, origin, scale) => {
 		let final = {};
 		const poissonCallback = random.poisson(lambda = p_mean);
@@ -60,6 +65,8 @@ module.exports = {
 		}
 		return final;
 	},
+	//Each coin is added to the map, has a probability of either being within a range of some random coin,
+	//or in a totally random position
 	generateCorrelatedRandom: (amount_per, ids, origin, scale) => {
 		return rescale(get2DCorrelatedVectors(amount_per, ids), origin, scale);
 	},
@@ -79,6 +86,62 @@ module.exports = {
 				x: Math.random(),
 				z: Math.random()
 			}, origin, scale);
+		}
+	},
+	//Same as above, except grids are chosen, not single coins, to prevent clustering. Also, 
+	//an array of cells is passed in that has a lower probability of being randomly chosen (creates empty exploration spaces):
+	generateCorrelatedGrid: (amount_per, num_rows, ids, empties, origin, scale) => {
+		let res = get2DCorrelatedGridVectors(amount_per, num_rows, ids, empties);
+		for (let id of Object.keys(res)) {
+			for (let i = 0; i < res[id].positions.length; i++) {
+				res[id].positions[i] = _fix(res[id].positions[i], origin, scale);
+			}
+		}
+		return res;
+	},
+
+	//Modifies coins array in-place. First, calculates grid coin belongs to, decrements count (or pops),
+	//Follows same procedure as above for a single coin:
+	replaceSingleCorrelatedGrid: (coins, id, relativeIdx, empties, num_rows, origin, scale) => {
+		let gridRow = Math.floor(((coins[id].positions[relativeIdx].x - origin.x) / scale.x) * 10);
+		let gridCol = Math.floor(((coins[id].positions[relativeIdx].z - origin.z) / scale.z) * 10);
+		for (let gridIdx = 0; gridIdx < coins[id].pickedGrids.length; gridIdx++) {
+			if (gridRow == coins[id].pickedGrids[gridIdx][0]
+				&& gridCol == coins[id].pickedGrids[gridIdx][1]) {
+				coins[id].pickedGrids[gridIdx].count--;
+				if (coins[id].pickedGrids[gridIdx].count == 0) {
+					coins[id].pickedGrids.splice(gridIdx, 1);
+					break;
+				}
+			}
+		}
+		let pickedGrid;
+		if (Math.random() <= PROB_ATTRACTED) {
+			pickedGrid = coins[id].pickedGrids[getRandomInt(0, coins[id].pickedGrids.length - 1)];
+		} else {
+			if (Math.random() <= EMPTY_BIAS * (empties.length / (num_rows * num_rows))) {
+				pickedGrid = empties[getRandomInt(0, empties.length - 1)];
+			} else {
+				let diff_cells = getDiffCells(num_rows, empties);
+				pickedGrid = diff_cells[getRandomInt(0, diff_cells.length - 1)];
+			}
+		}
+		coins[id].positions[relativeIdx] = _fix({
+			x: (pickedGrid[0] + Math.random()) * 0.1,
+			z: (pickedGrid[1] + Math.random()) * 0.1,
+		}, origin, scale);
+		if (!JSON.stringify(coins[id].pickedGrids).includes(JSON.stringify(pickedGrid))) {
+			pickedGrid.count = 1;
+			coins[id].pickedGrids.push(pickedGrid);
+		} else {
+			//Find, increment count (on collection, count should be decremented, and popped if equals 0):
+			for (let idx = 0; idx < coins[id].pickedGrids.length; idx++) {
+				if (coins[id].pickedGrids[idx][0] == pickedGrid[0]
+					&& coins[id].pickedGrids[idx][1] == pickedGrid[1]) {
+					coins[id].pickedGrids[idx].count++;
+					break;
+				}
+			}
 		}
 	}
 };
@@ -109,6 +172,62 @@ const getIdArray = (ids, n_partitions) => {
 		}
 	}
 	return ret;
+}
+
+//Empties: array of tuples [ [0, 1], [11, 3], ... ] of empty cells
+const get2DCorrelatedGridVectors = (amount_per, num_rows, ids, empties) => {
+	let final = {};
+	for (let id of ids) {
+		//pickedGrids variable is both for this method and for future methods of regeneration:
+		final[id] = {pickedGrids: [], positions: []};
+		for (let i = 0; i < amount_per; i++) {
+			let pickedGrid;
+			if (i > 0 && Math.random() <= PROB_ATTRACTED) {
+				pickedGrid = final[id].pickedGrids[getRandomInt(0, final[id].pickedGrids.length - 1)];
+			} else {
+				//Sample EMPTY_BIAS * proportion(empties to total), pick random from all grids - empties, or empties,
+				//then push to pickedGrids, positions
+				if (Math.random() <= EMPTY_BIAS * (empties.length / (num_rows * num_rows))) {
+					//Pick from empties:
+					pickedGrid = empties[getRandomInt(0, empties.length - 1)];
+				} else {
+					let diff_cells = getDiffCells(num_rows, empties);
+					pickedGrid = diff_cells[getRandomInt(0, diff_cells.length - 1)];
+				}
+			}
+			final[id].positions.push({
+				x: (pickedGrid[0] + Math.random()) * 0.1,
+				z: (pickedGrid[1] + Math.random()) * 0.1,
+			});
+			if (!JSON.stringify(final[id].pickedGrids).includes(JSON.stringify(pickedGrid))) {
+				pickedGrid.count = 1;
+				final[id].pickedGrids.push(pickedGrid);
+			} else {
+				//Find, increment count (on collection, count should be decremented, and popped if equals 0):
+				for (let idx = 0; idx < final[id].pickedGrids.length; idx++) {
+					if (final[id].pickedGrids[idx][0] == pickedGrid[0]
+						&& final[id].pickedGrids[idx][1] == pickedGrid[1]) {
+						final[id].pickedGrids[idx].count++;
+						break;
+					}
+				}
+			}
+		}
+	}
+	return final;
+}
+
+const getDiffCells = (num_rows, empties) => {
+	//Total map of num_rows * num_rows size minus empties (array of cells):
+	let res = [];
+	for (let i = 0; i < num_rows; i++) {
+		for (let j = 0; j < num_rows; j++) {
+			if (!JSON.stringify(empties).includes(JSON.stringify([i, j]))) {
+				res.push([i, j]);
+			}
+		}
+	}
+	return res;
 }
 
 const get2DCorrelatedVectors = (amount_per, ids) => {

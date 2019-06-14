@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3594735370344289934}
   - component: {fileID: 7866926860137302348}
   - component: {fileID: 4988511899598044203}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -106,7 +106,7 @@ GameObject:
   - component: {fileID: 3796001417982197702}
   - component: {fileID: 2765886529632046571}
   - component: {fileID: -1946423999949632672}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: CoinPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}

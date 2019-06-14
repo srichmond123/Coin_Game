@@ -16,6 +16,7 @@ const io = socketIO(server);
 io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
+const NUM_ROWS = 10; //GRID size
 const UPDATE_INTERVAL = 200; // (In milliseconds)
 const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
 const COINS_PER_PLAYER = 70;
@@ -35,8 +36,8 @@ var MAP_ORIGIN = {
 var MAP_SCALE = { 
 	//x: 10.0,
 	//z: 18.296 
-	x: 100.0,
-	z: 100.0,
+	x: 150.0,
+	z: 150.0,
 }; //Generate on 2D surface, raise y according to terrain dim
 
 /*
@@ -56,7 +57,17 @@ var game_num = 0;
 
 var coinQueue = {};
 var gameScore = 0;
-const GOAL = 5;
+const GOAL = 30;
+
+var empties = (() => { 
+	let res = []; 
+	for (let i = 4; i < 8; i++) {
+		for (let j = 4; j < 8; j++) {
+			res.push([i, j]);
+		}
+	}
+	return res; 
+})(); 
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -111,13 +122,22 @@ io.on('connection', (socket) => {
 
 			if (++gameScore == GOAL) {
 				nextRound();
+			} else {
+				let relativeIdx = getRelativeIndex(socket.id, data.index);
+				generation.replaceSingleCorrelatedGrid(coins, socket.id, relativeIdx, empties, NUM_ROWS, MAP_ORIGIN, MAP_SCALE); 
+				setTimeout((emission) => {
+					for (let id of Object.keys(users)) {
+						io.to(id).emit('newCoin', emission);
+					}
+				}, 1000 * 10, {id: socket.id, position: coins[socket.id].positions[relativeIdx], index: data.index});
 			}
-
+			/*
 			let res = generation.generateSingleCorrelated(coins, socket.id, data.index, MAP_ORIGIN, MAP_SCALE);
 			coins[socket.id][data.index] = res;
-			for (let id of Object.keys(users)) { //TODO delay
+			for (let id of Object.keys(users)) {
 				io.to(id).emit('newCoin', { id: socket.id, position: coins[socket.id][data.index], index: data.index });
 			}
+			*/
 			/*
 			coins[socket.id][data.index] = undefined;
 			if (coinQueue[socket.id] == undefined) {
@@ -184,6 +204,18 @@ function getRandomInt(min, max) { //Inclusive to min, max
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const getRelativeIndex = (myId, absIndex) => {
+	let curr = absIndex;
+	for (let id of Object.keys(coins)) {
+		if (id != myId) {
+			curr -= coins[id].positions.length;
+		} else {
+			return curr;
+		}
+	}
+	return absIndex;
+}
+
 const start = () => {
 	//shift variable below is TEST code, a placeholder for coin generation
 	let xInd = -1;
@@ -199,21 +231,32 @@ const start = () => {
 			},
 			//interval: UPDATE_INTERVAL * 0.001,
 			goal: GOAL,
-			topology
-		}); //<-- Tell each person their own id
+			topology,
+			origin: MAP_ORIGIN,
+			scale: MAP_SCALE, //Allows players to figure out bounds for minimap and out of bounds warnings
+		});
 		coinCount[id].numOwnCoins = 0;
 		coinCount[id].numOtherCoins = 0;
 	}
 	//coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
-	coins = generation.generateCorrelatedRandom(COINS_PER_PLAYER, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	//coins = generation.generateCorrelatedRandom(COINS_PER_PLAYER, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	//coins = generation.generatePoisson(1, 100, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	coins = generation.generateCorrelatedGrid(COINS_PER_PLAYER, NUM_ROWS, Object.keys(users), empties, MAP_ORIGIN, MAP_SCALE);
 	coinQueue = {};
 	//setTimeout(nextRound, GAME_LENGTH);
 }
 
 const sendCoins = () => {
+	let sendCoins = {};
+	for (let id of Object.keys(coins)) {
+		if (coins[id].positions) {
+			sendCoins[id] = coins[id].positions;
+		} else {
+			sendCoins[id] = coins[id];
+		}
+	}
 	for (let id of Object.keys(users)) {
-		io.to(id).emit('coins', coins);
+		io.to(id).emit('coins', sendCoins);
 	}
 }
 
