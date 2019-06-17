@@ -10,6 +10,7 @@ const PROB_ATTRACTED = 0.6;
 // This num is multiplied by the proportion of empties to total (eg, 1.0 would have
 // empties have an equal chance of being picked, 1.5 would bias them to be full, 0.5 would make them half as full):
 const EMPTY_BIAS = 0.1;
+const ABS_Y_SCALE = 10; //How much height can vary (units in Unity)
 
 module.exports = {
 	generateAll: (amount_per, num_clumps, ids, origin, scale) => {

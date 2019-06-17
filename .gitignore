@@ -155,3 +155,7 @@ typings/
 .dynamodb/
 
 *.swp
+
+
+# Extra:
+Assets/Oculus/

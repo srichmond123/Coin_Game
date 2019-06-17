@@ -28,6 +28,7 @@ public class Controller : MonoBehaviour {
 	public static float SpeedDecrement => 4f; //Stop faster
 	public static int Goal;
 	public static bool MulticolorBar => true;
+	static float heightThreshold => 0.8f; //How high user can be above terrain Y
 	public static Vector3 BarOrigin = Vector3.zero;
 	
 	//private const int ZeroScoreRight = 347;
@@ -44,6 +45,7 @@ public class Controller : MonoBehaviour {
 	public static List<string> permissibleIndividuals;
 	public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
 	public static int MyScore = 0; //Score is directly related to bumping into a coin, doesn't have to do with sharing.
+	private static Vector3 MapScale, MapOrigin;
 
 	public GameObject arrowOfVirtue;
 	public int _MyCoins, _OtherCoins;
@@ -60,6 +62,7 @@ public class Controller : MonoBehaviour {
 	private static Text scoreText;
 	private static Transform scoreBar, redBar, greenBar, blueBar;
 	private TerrainScript terrainScript;
+	private Boundaries boundaries;
 
 	void Start() {
 		if (disableVR) {
@@ -92,6 +95,7 @@ public class Controller : MonoBehaviour {
 		BarOrigin = greenBar.localPosition;
 		
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
+		boundaries = GameObject.Find("Boundaries").GetComponent<Boundaries>();
 	}
 
 	void HandleRejection(SocketIOEvent e) {
@@ -106,7 +110,12 @@ public class Controller : MonoBehaviour {
 	void HandleStart(SocketIOEvent e) {
 		Dictionary<string, string> res = e.data.ToDictionary();
 		myId = res["id"];
-		transform.localPosition = DeserializeVector3(e.data["position"]);
+		Vector3 myPos = DeserializeVector3(e.data["position"]);
+		myPos.y =
+			terrainScript.GetHeightAt(myPos)
+			+ terrainScript.transform.localPosition.y
+			+ heightThreshold + 0.1f;
+		transform.localPosition = myPos;
 		JSONObject topologyArray = e.data["topology"][myId];
 		Goal = (int) e.data["goal"].n;
 		permissibleIndividuals.Clear();
@@ -130,10 +139,13 @@ public class Controller : MonoBehaviour {
 		light.range = InitialRange;
 		setInitialPositions = false;
 		UpdateScore();
+
+		MapOrigin = DeserializeVector3(e.data["origin"]);
+		MapScale = DeserializeVector3(e.data["scale"]);
+		boundaries.Set(MapOrigin, MapScale);
 	}
 
 	void ShowGenerosity(Opponent opponent) {
-		//TODO maybe don't allow sharing by clicking on person
 		string to = opponent.GetId();
 		if (MyCoinsOwned == 0 || !permissibleIndividuals.Contains(to)) return;
 
@@ -401,7 +413,6 @@ public class Controller : MonoBehaviour {
 		}
 
 		float incr = speed * Time.deltaTime;
-		float heightThreshold = 0.8f; //How high user can be above terrain Y
 		Transform t = transform;
 		Vector3 forward = t.GetChild(0).GetChild(0).forward;
 		Vector3 localPosition = t.localPosition;
@@ -417,9 +428,16 @@ public class Controller : MonoBehaviour {
 			Vector3 nextPos = localPosition + forward * incr;
 			nextPos.y = Mathf.Max(nextY, nextPos.y);
 			t.localPosition = nextPos;
-			return;
 		}
-		t.localPosition += forward * incr;
+		else {
+			t.localPosition += forward * incr;
+		}
+
+		Vector3 currPosition = t.localPosition;
+		Vector3 modPosition = boundaries.Outside(currPosition);
+		if (!currPosition.Equals(modPosition)) {
+			t.localPosition = modPosition;
+		}
 	}
 
 	Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:

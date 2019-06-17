@@ -36,8 +36,9 @@ var MAP_ORIGIN = {
 var MAP_SCALE = { 
 	//x: 10.0,
 	//z: 18.296 
-	x: 150.0,
-	z: 150.0,
+	x: 300.0,
+	y: 0.0,
+	z: 300.0,
 }; //Generate on 2D surface, raise y according to terrain dim
 
 /*
@@ -218,18 +219,18 @@ const getRelativeIndex = (myId, absIndex) => {
 
 const start = () => {
 	//shift variable below is TEST code, a placeholder for coin generation
-	let xInd = -1;
+	//let xInd = -1;
 	let shift = 0;
 	let topology = getTopology(Object.keys(users), trial);
 	for (let id of Object.keys(users)) {
+		let position = {
+			x: Math.random() * MAP_SCALE.x + MAP_ORIGIN.x,
+			y: 0,
+			z: Math.random() * MAP_SCALE.z + MAP_ORIGIN.z,
+		};
 		io.to(id).emit('start', {
 			id: id,
-			position: {
-				x: 4 * xInd++,
-				y: 0,
-				z: 0,
-			},
-			//interval: UPDATE_INTERVAL * 0.001,
+			position,
 			goal: GOAL,
 			topology,
 			origin: MAP_ORIGIN,
