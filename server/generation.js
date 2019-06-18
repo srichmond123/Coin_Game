@@ -10,7 +10,7 @@ const PROB_ATTRACTED = 0.6;
 // This num is multiplied by the proportion of empties to total (eg, 1.0 would have
 // empties have an equal chance of being picked, 1.5 would bias them to be full, 0.5 would make them half as full):
 const EMPTY_BIAS = 0.1;
-const ABS_Y_SCALE = 10; //How much height can vary (units in Unity)
+const ABS_Y_SCALE = 6.5; //How much height can vary (units in Unity)
 
 module.exports = {
 	generateAll: (amount_per, num_clumps, ids, origin, scale) => {
@@ -79,12 +79,13 @@ module.exports = {
 			}
 			return _add(picked_position, {
 				x: Math.random() * CLUMP_RADIUS * scale.x,
-				y: 0,
+				y: Math.random() * ABS_Y_SCALE,
 				z: Math.random() * CLUMP_RADIUS * scale.z
 			});
 		} else {
 			return _fix({
 				x: Math.random(),
+				y: Math.random() * ABS_Y_SCALE,
 				z: Math.random()
 			}, origin, scale);
 		}
@@ -129,6 +130,7 @@ module.exports = {
 		}
 		coins[id].positions[relativeIdx] = _fix({
 			x: (pickedGrid[0] + Math.random()) * 0.1,
+			y: ABS_Y_SCALE * Math.random(),
 			z: (pickedGrid[1] + Math.random()) * 0.1,
 		}, origin, scale);
 		if (!JSON.stringify(coins[id].pickedGrids).includes(JSON.stringify(pickedGrid))) {
@@ -198,6 +200,7 @@ const get2DCorrelatedGridVectors = (amount_per, num_rows, ids, empties) => {
 			}
 			final[id].positions.push({
 				x: (pickedGrid[0] + Math.random()) * 0.1,
+				y: ABS_Y_SCALE * Math.random(),
 				z: (pickedGrid[1] + Math.random()) * 0.1,
 			});
 			if (!JSON.stringify(final[id].pickedGrids).includes(JSON.stringify(pickedGrid))) {
@@ -304,9 +307,9 @@ const get2DClumpVectors = (amount_per, num_clumps, ids) => {
 }
 
 function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 /*
  * Resizes 2d vectors (ranging from 0 to 1), based on origin of map 
@@ -350,7 +353,7 @@ const _add = (v1, v2) => {
 const _fix = (vec, origin, scale) => {
 	return {
 		x: origin.x + scale.x * vec.x,
-		y: origin.y,
+		y: vec.y || 0,
 		z: origin.z + scale.z * vec.z
 	};
 }

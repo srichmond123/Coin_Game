@@ -58,6 +58,8 @@ var game_num = 0;
 
 var coinQueue = {};
 var gameScore = 0;
+var startTime;
+var intervalId = -1;
 const GOAL = 30;
 
 var empties = (() => { 
@@ -111,6 +113,7 @@ io.on('connection', (socket) => {
 			//delete endzone[socket.id];
 			//console.log('client disconnected');
 			//CLEAR UPDATE INTERVAL
+			//clearTimeout(intervalId); //like that
 		});
 
 		socket.on('collect', (data) => {
@@ -185,6 +188,7 @@ io.on('connection', (socket) => {
 		if (Object.keys(users).length == GAME_SIZE) {
 			//Bring users out of lobby, position at x: -4, x: 0, and x: 4:
 			start();
+			startTime = -1;
 			update();
 			sendCoins();
 
@@ -335,10 +339,12 @@ const getTopologyIndex = (trial, game) => {
 }
 
 const update = () => {
+	if (startTime == -1) startTime = Date.now();
+	let time = Date.now() - startTime;
 	for (let id of Object.keys(users)) {
-		io.to(id).emit('update', users);
+		io.to(id).emit('update', {users, time});
 	}
-	setTimeout(update, UPDATE_INTERVAL);
+	intervalId = setTimeout(update, UPDATE_INTERVAL);
 }
 
 

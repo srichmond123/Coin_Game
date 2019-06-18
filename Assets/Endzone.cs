@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using SocketIO;
 using UnityEngine;
 
+[Obsolete("Not a race anymore. Will probably delete this class in a later commit.")]
 public class Endzone : MonoBehaviour {
     // Start is called before the first frame update
     private SocketIOComponent socket;

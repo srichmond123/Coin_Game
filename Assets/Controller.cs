@@ -59,8 +59,8 @@ public class Controller : MonoBehaviour {
 	private float luminosity = 0.2f;
 	public static Light light;
 	public static GameObject controllerGameObject;
-	private static Text scoreText;
-	private static Transform scoreBar, redBar, greenBar, blueBar;
+	private static Text scoreText, timeText;
+	private static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
 
@@ -87,11 +87,13 @@ public class Controller : MonoBehaviour {
 		socket.On("getOut", HandleRejection);
 		light = GameObject.Find("My Light").GetComponent<Light>();
 		controllerGameObject = gameObject;
-		scoreText = GetComponentInChildren<Text>();
+		scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
+		timeText = GameObject.Find("TimeText").GetComponent<Text>();
 		scoreBar = GameObject.Find("Bar").transform;
 		redBar = GameObject.Find("RedBar").transform;
 		blueBar = GameObject.Find("BlueBar").transform;
 		greenBar = GameObject.Find("GreenBar").transform;
+		emptyBar = GameObject.Find("EmptyBar").transform;
 		BarOrigin = greenBar.localPosition;
 		
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
@@ -143,6 +145,7 @@ public class Controller : MonoBehaviour {
 		MapOrigin = DeserializeVector3(e.data["origin"]);
 		MapScale = DeserializeVector3(e.data["scale"]);
 		boundaries.Set(MapOrigin, MapScale);
+		timeText.text = " 0:00";
 	}
 
 	void ShowGenerosity(Opponent opponent) {
@@ -171,7 +174,8 @@ public class Controller : MonoBehaviour {
 			GetOpponentById(data["to"]).OtherCoins++;
 		}
 	}
-
+	
+	[Obsolete("Map is way too big for this method to be useful")]
 	void VirtueSignal(Opponent from, Opponent to) {
 		Vector3 fromVec = from.transform.localPosition;
 		Vector3 toVec = to.transform.localPosition;
@@ -208,14 +212,15 @@ public class Controller : MonoBehaviour {
 			}
 		}
 
-		scoreText.text = scoreSum.ToString();
+		scoreText.text = scoreSum + "/" + Goal;
 		if (!MulticolorBar) {
 			ModifyBarTransform(scoreBar, scoreSum, 0f);
 		}
 		else {
 			float blueWid = ModifyBarTransform(blueBar, blueScore, 0);
 			float redWid = ModifyBarTransform(redBar, redScore, blueWid);
-			ModifyBarTransform(greenBar, MyScore, blueWid + redWid);
+			float greenWid = ModifyBarTransform(greenBar, MyScore, blueWid + redWid);
+			ModifyBarTransform(emptyBar, Goal - scoreSum, blueWid + redWid + greenWid);
 		}
 	}
 
@@ -246,7 +251,7 @@ public class Controller : MonoBehaviour {
 		if (opponents[0].GetId().Equals("")) { 
 			//If this is the first update, assign ids:
 			int ind = 0;
-			foreach (string key in e.data.keys) {
+			foreach (string key in e.data["users"].keys) {
 				if (!key.Equals(myId)) {
 					opponents[ind++].SetId(key);
 				}
@@ -254,11 +259,19 @@ public class Controller : MonoBehaviour {
 		}
 		else {
 			foreach (Opponent o in opponents) {
-				o.AdjustTransform(e.data, !setInitialPositions);
+				//o.AdjustTransform(e.data["users"], !setInitialPositions);
+				//TODO uncomment above line
 			}
 			setInitialPositions = true;
 		}
-		
+
+		int time_ms = (int) e.data["time"].f;
+		int seconds_total = Mathf.FloorToInt(time_ms / 1000f);
+		int minutes = Mathf.FloorToInt(seconds_total / 60f);
+		int seconds = seconds_total % 60;
+		timeText.text = (minutes > 9 ? "" : " ") + minutes + ":"
+		                + (seconds > 9 ? "" : "0") + seconds;
+
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("position", SerializeVector3(transform.localPosition));
 		send.AddField("rotation", SerializeQuaternion(GetMyRotation()));

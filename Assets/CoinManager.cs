@@ -28,8 +28,8 @@ public class CoinManager : MonoBehaviour {
 		Vector3 position = Controller.DeserializeVector3(e.data["position"]);
 		int idx = (int) e.data["index"].n;
 		GameObject inst = Instantiate(coinPrefab);
-		position.y = terrainScript.transform.localPosition.y + 1.2f;
-		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);;
+		position.y += terrainScript.transform.localPosition.y + 1.2f;
+		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
 		inst.GetComponent<Collider>().enabled = true;
 		CoinScript cs = inst.GetComponent<CoinScript>();
@@ -77,8 +77,8 @@ public class CoinManager : MonoBehaviour {
 			for (int i = 0; i < arr.Count; i++) {
 				Vector3 pos = Controller.DeserializeVector3(arr[i]);
 				GameObject inst = Instantiate(coinPrefab);
-				pos.y = terrainScript.transform.localPosition.y + 1.2f;
-				inst.transform.localPosition = pos + Vector3.up * terrainScript.GetHeightAt(pos);;
+				pos.y += terrainScript.transform.localPosition.y + 1.2f;
+				inst.transform.localPosition = pos + Vector3.up * terrainScript.GetHeightAt(pos);
 				inst.GetComponent<Collider>().enabled = false;
 				inst.GetComponent<Collider>().enabled = true;
 				if (id.Equals(Controller.myId)) {
