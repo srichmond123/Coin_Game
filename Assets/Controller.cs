@@ -145,6 +145,7 @@ public class Controller : MonoBehaviour {
 		MapOrigin = DeserializeVector3(e.data["origin"]);
 		MapScale = DeserializeVector3(e.data["scale"]);
 		boundaries.Set(MapOrigin, MapScale);
+		boundaries.SetScenery();
 		timeText.text = " 0:00";
 	}
 
