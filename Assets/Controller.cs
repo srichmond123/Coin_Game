@@ -19,8 +19,8 @@ public class Controller : MonoBehaviour {
 
 	public static float MinRange => 10f;
 	public static float MaxRange => 200f; //Maybe infinite
-	public static float OwnRangeIncrease => 20f;
-	public static float OtherRangeIncrease => 40f;
+	public static float OwnRangeIncrease => 25f;
+	public static float OtherRangeIncrease => 25f;
 	public static float ConstDecrease => 2.0f; // ConstDecrease * Time.deltaTime (per frame)
 	public static float InitialRange => 80f;
 	public static float MaxSpeed => 4f;

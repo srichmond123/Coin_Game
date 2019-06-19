@@ -28,7 +28,7 @@ public class Boundaries : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update() {
-
+		
 	}
 
 	public Vector3 GetRandomPositionOnMap(float offsetY, float heightVariability) {
@@ -91,7 +91,7 @@ public class Boundaries : MonoBehaviour {
 	public void Set(Vector3 _origin, Vector3 _scale) {
 		origin = _origin - Vector3.right * 1.2f - Vector3.forward * 1.2f; //Slight extra room
 		scale = _scale + Vector3.right * 2.4f + Vector3.forward * 2.4f;
-		const float yPos = 40f, yScale = 120f;
+		const float yPos = 40f, yScale = 220f;
 		Vector3 leftPos = origin + Vector3.forward * scale.z / 2;
 		Vector3 leftScale = scale;
 		leftScale.x = 0.01f;

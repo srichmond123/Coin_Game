@@ -23,6 +23,7 @@ const COINS_PER_PLAYER = 70;
 const NUM_CLUMPS = 10; //(per player);
 const NEW_CLUMP_MIN_TIME = 2000;
 const NEW_CLUMP_MAX_TIME = 5000;
+const NUM_EMPTY_CELLS = 50;
 var users = {}; //id as index, position and rotation stored
 var coinCount = {}; //id -> numOwnCoins, numOtherCoins
 var coinsToRegenerate = COINS_PER_PLAYER / NUM_CLUMPS; //Changes randomly each assignment
@@ -62,15 +63,8 @@ var startTime;
 var intervalId = -1;
 const GOAL = 30;
 
-var empties = (() => { 
-	let res = []; 
-	for (let i = 4; i < 8; i++) {
-		for (let j = 4; j < 8; j++) {
-			res.push([i, j]);
-		}
-	}
-	return res; 
-})(); 
+
+var empties;// = getEmptyPatches(NUM_EMPTY_CELLS);
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -204,9 +198,9 @@ server.listen(port, () => console.log(`listening on port ${port}`));
 
 
 function getRandomInt(min, max) { //Inclusive to min, max
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 const getRelativeIndex = (myId, absIndex) => {
@@ -246,6 +240,7 @@ const start = () => {
 	//coins = generation.generateAll(COINS_PER_PLAYER, NUM_CLUMPS, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	//coins = generation.generateCorrelatedRandom(COINS_PER_PLAYER, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
 	//coins = generation.generatePoisson(1, 100, Object.keys(users), MAP_ORIGIN, MAP_SCALE);
+	empties = getEmptyPatches(NUM_EMPTY_CELLS);
 	coins = generation.generateCorrelatedGrid(COINS_PER_PLAYER, NUM_ROWS, Object.keys(users), empties, MAP_ORIGIN, MAP_SCALE);
 	coinQueue = {};
 	//setTimeout(nextRound, GAME_LENGTH);
@@ -314,14 +309,14 @@ const getTopology = (ids, trial) => { //TODO mix up due to finishing tutorial ti
 }
 
 function shuffle(a) {
-    var j, x, i;
-    for (i = a.length - 1; i > 0; i--) {
-        j = Math.floor(Math.random() * (i + 1));
-        x = a[i];
-        a[i] = a[j];
-        a[j] = x;
-    }
-    return a;
+	var j, x, i;
+	for (i = a.length - 1; i > 0; i--) {
+		j = Math.floor(Math.random() * (i + 1));
+		x = a[i];
+		a[i] = a[j];
+		a[j] = x;
+	}
+	return a;
 }
 
 let _arrangements = [
@@ -347,5 +342,19 @@ const update = () => {
 	intervalId = setTimeout(update, UPDATE_INTERVAL);
 }
 
+
+const getEmptyPatches = (num) => {
+	let res = [];
+	let all = [];
+	for (let i = 0; i < NUM_ROWS; i++) {
+		for (let j = 0; j < NUM_ROWS; j++) {
+			all.push([i, j]);
+		}
+	}
+	for (let i = 0; i < num; i++) {
+		res.push(all.splice(getRandomInt(0, all.length - 1), 1)[0]);
+	}
+	return res;
+}
 
 
