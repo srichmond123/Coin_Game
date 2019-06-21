@@ -84,10 +84,10 @@ public class Tutorial : MonoBehaviour {
 	}
 
 	private static void SetArrowPositionAndRotation(Vector3 position, float xRotation) {
-        helpArrow.transform.localPosition = position;
-        Vector3 eulerAngles = helpArrow.transform.localEulerAngles;
-        eulerAngles.x = xRotation;
-        helpArrow.transform.localEulerAngles = eulerAngles;
+		helpArrow.transform.localPosition = position;
+		Vector3 eulerAngles = helpArrow.transform.localEulerAngles;
+		eulerAngles.x = xRotation;
+		helpArrow.transform.localEulerAngles = eulerAngles;
 	}
 
 	public static void NextStep() {
@@ -100,9 +100,9 @@ public class Tutorial : MonoBehaviour {
 			
 			case ShowScoreTextStep: {
 				Interface.scoreText.enabled = true;
-                helpArrow.GetComponent<MeshRenderer>().enabled = true;
-                SetArrowPositionAndRotation(arrowPositionScoreText, arrowXRotationScoreText);
-                controllerHelper.SetVisible(false);
+				helpArrow.GetComponent<MeshRenderer>().enabled = true;
+				SetArrowPositionAndRotation(arrowPositionScoreText, arrowXRotationScoreText);
+				controllerHelper.SetVisible(false);
 				DestroyAllInstances();
 				break;
 			}
@@ -135,7 +135,7 @@ public class Tutorial : MonoBehaviour {
 
 			case ShowCoinsStep: {
 				controllerHelper.ShowAButton(); //TODO dont allow swimming until now
-                break;
+				break;
 			}
 
 			case ShowBucketsStep: {
