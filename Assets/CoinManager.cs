@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using OVRSimpleJSON;
 using SocketIO;
 using UnityEngine;
@@ -23,9 +25,15 @@ public class CoinManager : MonoBehaviour {
 		socket.On("newCoin", HandleNewCoin);
 	}
 
+	[Obsolete("Only use in tutorial")]
+	public void AppendToList(GameObject coin) {
+		coin.GetComponent<CoinScript>().index = coins.Count;
+		coins.Add(coin);
+	}
+
 	void HandleNewCoin(SocketIOEvent e) {
 		string id = e.data["id"].str;
-		Vector3 position = Controller.DeserializeVector3(e.data["position"]);
+		Vector3 position = Interface.DeserializeVector3(e.data["position"]);
 		int idx = (int) e.data["index"].n;
 		GameObject inst = Instantiate(coinPrefab);
 		position.y += terrainScript.transform.localPosition.y + 1.2f;
@@ -33,7 +41,7 @@ public class CoinManager : MonoBehaviour {
 		inst.GetComponent<Collider>().enabled = false;
 		inst.GetComponent<Collider>().enabled = true;
 		CoinScript cs = inst.GetComponent<CoinScript>();
-		Color c = id == Controller.myId ? Color.green : Controller.GetOpponentById(id).GetColor();
+		Color c = id == Interface.MyId ? Color.green : Interface.GetFriendById(id).GetColor();
 		cs.SetColor(c);
 		cs.SetId(id);
 		cs.SetParent(this);
@@ -47,8 +55,8 @@ public class CoinManager : MonoBehaviour {
 		int idx = int.Parse(res["index"]);
 		Destroy(coins[idx]);
 		coins[idx] = null;
-		Controller.GetOpponentById(res["id"]).Score++;
-		Controller.UpdateScore();
+		Interface.GetFriendById(res["id"]).Score++;
+		Interface.UpdateScore();
 	}
 
 	void HandleCoins(SocketIOEvent e) {
@@ -61,11 +69,11 @@ public class CoinManager : MonoBehaviour {
 		}
 		coins.Clear(); // Could be 2nd or 3rd round
 		foreach (string id in e.data.keys) {
-			Color c = Controller.NullColor;
-			if (!id.Equals(Controller.myId)) {
-				foreach (Opponent opp in Controller.opponents) {
-					if (opp.GetId().Equals(id)) {
-						c = opp.GetColor();
+			Color c = Interface.NullColor;
+			if (!id.Equals(Interface.MyId)) {
+				foreach (Friend friend in Interface.friends) {
+					if (friend.GetId().Equals(id)) {
+						c = friend.GetColor();
 					}
 				}
 			}
@@ -75,13 +83,13 @@ public class CoinManager : MonoBehaviour {
 
 			JSONObject arr = e.data[id];
 			for (int i = 0; i < arr.Count; i++) {
-				Vector3 pos = Controller.DeserializeVector3(arr[i]);
+				Vector3 pos = Interface.DeserializeVector3(arr[i]);
 				GameObject inst = Instantiate(coinPrefab);
 				pos.y += terrainScript.transform.localPosition.y + 1.2f;
 				inst.transform.localPosition = pos + Vector3.up * terrainScript.GetHeightAt(pos);
 				inst.GetComponent<Collider>().enabled = false;
 				inst.GetComponent<Collider>().enabled = true;
-				if (id.Equals(Controller.myId)) {
+				if (id.Equals(Interface.MyId)) {
 					inst.layer = LayerMask.NameToLayer("My Coins");
 				}
 				CoinScript cs = inst.GetComponent<CoinScript>();
@@ -97,13 +105,13 @@ public class CoinManager : MonoBehaviour {
 	public void Collect(int index) { //User collects a coin
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("index", index);
-		send.AddField("position", Controller.SerializeVector3(Controller.GetMyPosition()));
+		send.AddField("position", Interface.SerializeVector3(Interface.GetMyPosition()));
 		socket.Emit("collect", send);
 		Destroy(coins[index]);
 		coins[index] = null;
 		buckets.Handle();
-		Controller.MyScore++;
-		Controller.UpdateScore();
+		Interface.MyScore++;
+		Interface.UpdateScore();
 	}
 
 	// Update is called once per frame

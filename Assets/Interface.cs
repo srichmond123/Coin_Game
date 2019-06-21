@@ -8,25 +8,26 @@ using UnityEngine.XR;
 using UnityEngine.UI;
 using Vector3 = UnityEngine.Vector3;
 using SocketIO;
+using TMPro;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 using Quaternion = UnityEngine.Quaternion;
 using Vector2 = UnityEngine.Vector2;
 
 
-public class Controller : MonoBehaviour {
+public class Interface : MonoBehaviour {
 	public static Color NullColor => Color.magenta;
 
 	public static float MinRange => 10f;
 	public static float MaxRange => 200f; //Maybe infinite
-	public static float OwnRangeIncrease => 25f;
-	public static float OtherRangeIncrease => 25f;
+	public static float OwnRangeIncrease => 32f;
+	public static float OtherRangeIncrease => 32f;
 	public static float ConstDecrease => 2.0f; // ConstDecrease * Time.deltaTime (per frame)
 	public static float InitialRange => 80f;
 	public static float MaxSpeed => 4f;
 	public static float SpeedIncrement => 2.5f;
 	public static float SpeedDecrement => 4f; //Stop faster
-	public static int Goal;
+	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	public static bool MulticolorBar => true;
 	static float heightThreshold => 0.8f; //How high user can be above terrain Y
 	public static Vector3 BarOrigin = Vector3.zero;
@@ -39,9 +40,10 @@ public class Controller : MonoBehaviour {
 
 	private float speed = 4f;
 	public static SocketIOComponent socket;
-	public static string myId;
+	private const string BlankId = "BLANK";
+	public static string MyId = BlankId;
 	private bool setInitialPositions = false;
-	public static List<Opponent> opponents;
+	public static List<Friend> friends;
 	public static List<string> permissibleIndividuals;
 	public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
 	public static int MyScore = 0; //Score is directly related to bumping into a coin, doesn't have to do with sharing.
@@ -50,7 +52,7 @@ public class Controller : MonoBehaviour {
 	public GameObject arrowOfVirtue;
 	public int _MyCoins, _OtherCoins;
 	public static bool flying = false;
-	public static bool slowingDown = false;
+	private static bool slowingDown = false;
 	private float currBoost = 1f;
 	//private float boostTime = 0f;
 	private float timeSpentSlowingDown = 0f;
@@ -58,9 +60,10 @@ public class Controller : MonoBehaviour {
 	public static Buckets buckets;
 	private float luminosity = 0.2f;
 	public static Light light;
-	public static GameObject controllerGameObject;
-	private static Text scoreText, timeText;
+	public static Transform interfaceTransform;
+	public static TextMeshPro scoreText, timeText;
 	private static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
+	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
 
@@ -73,22 +76,21 @@ public class Controller : MonoBehaviour {
 			//
 		}
 		buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
-		opponents = new List<Opponent>();
+		friends = new List<Friend>();
 		permissibleIndividuals = new List<string>();
-		opponents.Add(GameObject.Find("Player_1").GetComponent<Opponent>());
-		opponents.Add(GameObject.Find("Player_2").GetComponent<Opponent>());
+		friends.Add(GameObject.Find("Player_1").GetComponent<Friend>());
+		friends.Add(GameObject.Find("Player_2").GetComponent<Friend>());
 		
-		GameObject sockObject = GameObject.Find("SocketIO");
-		socket = sockObject.GetComponent<SocketIOComponent>();
-		
+		socket = GameObject.Find("SocketIO").GetComponent<SocketIOComponent>();
+
 		socket.On("start", HandleStart);
 		socket.On("update", OnSocketUpdate);
 		socket.On("give", HandleGenerosity);
 		socket.On("getOut", HandleRejection);
 		light = GameObject.Find("My Light").GetComponent<Light>();
-		controllerGameObject = gameObject;
-		scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
-		timeText = GameObject.Find("TimeText").GetComponent<Text>();
+		interfaceTransform = gameObject.transform;
+		scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshPro>();
+		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
 		scoreBar = GameObject.Find("Bar").transform;
 		redBar = GameObject.Find("RedBar").transform;
 		blueBar = GameObject.Find("BlueBar").transform;
@@ -98,6 +100,9 @@ public class Controller : MonoBehaviour {
 		
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
 		boundaries = GameObject.Find("Boundaries").GetComponent<Boundaries>();
+
+		scoreText.enabled = false;
+		timeText.enabled = false;
 	}
 
 	void HandleRejection(SocketIOEvent e) {
@@ -111,14 +116,14 @@ public class Controller : MonoBehaviour {
 
 	void HandleStart(SocketIOEvent e) {
 		Dictionary<string, string> res = e.data.ToDictionary();
-		myId = res["id"];
+		MyId = res["id"];
 		Vector3 myPos = DeserializeVector3(e.data["position"]);
 		myPos.y =
 			terrainScript.GetHeightAt(myPos)
 			+ terrainScript.transform.localPosition.y
 			+ heightThreshold + 0.1f;
 		transform.localPosition = myPos;
-		JSONObject topologyArray = e.data["topology"][myId];
+		JSONObject topologyArray = e.data["topology"][MyId];
 		Goal = (int) e.data["goal"].n;
 		permissibleIndividuals.Clear();
 		for (int i = 0; i < topologyArray.Count; i++) {
@@ -128,10 +133,10 @@ public class Controller : MonoBehaviour {
 		MyCoinsOwned = 0;
 		OtherCoinsOwned = 0;
 		MyScore = 0;
-		foreach (Opponent o in opponents) {
-			o.Score = 0;
-			o.OtherCoins = 0;
-			o.MyCoins = 0;
+		foreach (Friend f in friends) {
+			f.Score = 0;
+			f.OtherCoins = 0;
+			f.MyCoins = 0;
 		}
 		buckets.Hide();
 		flying = false;
@@ -149,8 +154,8 @@ public class Controller : MonoBehaviour {
 		timeText.text = " 0:00";
 	}
 
-	void ShowGenerosity(Opponent opponent) {
-		string to = opponent.GetId();
+	void ShowGenerosity(Friend friend) {
+		string to = friend.GetId();
 		if (MyCoinsOwned == 0 || !permissibleIndividuals.Contains(to)) return;
 
 		MyCoinsOwned--;
@@ -161,23 +166,23 @@ public class Controller : MonoBehaviour {
 
 	void HandleGenerosity(SocketIOEvent e) {
 		/*
-		 * Animate from opponent obj with id e.data[from] to e.data[to],
+		 * Animate from friend obj with id e.data[from] to e.data[to],
 		 * or if e.data[to] == myId, animate from e.data[from] to me:
 		 */
 		Dictionary<string, string> data = e.data.ToDictionary();
-		GetOpponentById(data["from"]).MyCoins--;
-		if (data["to"].Equals(myId)) {
+		GetFriendById(data["from"]).MyCoins--;
+		if (data["to"].Equals(MyId)) {
 			OtherCoinsOwned++;
 			//TODO Animation of receiving a coin
 		}
 		else {
-			//VirtueSignal(GetOpponentById(data["from"]), GetOpponentById(data["to"])); //TODO uncomment virtue signaling?
-			GetOpponentById(data["to"]).OtherCoins++;
+			//VirtueSignal(GetFriendById(data["from"]), GetFriendById(data["to"])); //TODO uncomment virtue signaling?
+			GetFriendById(data["to"]).OtherCoins++;
 		}
 	}
 	
 	[Obsolete("Map is way too big for this method to be useful")]
-	void VirtueSignal(Opponent from, Opponent to) {
+	void VirtueSignal(Friend from, Friend to) {
 		Vector3 fromVec = from.transform.localPosition;
 		Vector3 toVec = to.transform.localPosition;
 		GameObject inst = Instantiate(arrowOfVirtue); 
@@ -190,28 +195,34 @@ public class Controller : MonoBehaviour {
 	}
 	
 	
-	public static Opponent GetOpponentById(string id) {
-		foreach (Opponent o in opponents) {
-			if (o.GetId().Equals(id)) {
-				return o;
+	public static Friend GetFriendById(string id) {
+		foreach (Friend f in friends) {
+			if (f.GetId().Equals(id)) {
+				return f;
 			}
 		}
 
-		throw new Exception("Opponent " + id + " not found.");
+		throw new Exception("Friend " + id + " not found.");
 	}
 
 	public static void UpdateScore() {
-		int scoreSum = MyScore;
-		int blueScore = 0, redScore = 0;
-		foreach (Opponent o in opponents) {
-			scoreSum += o.Score;
-			if (o.GetColor().Equals(Color.red)) {
-				redScore = o.Score;
+		int blueScore = 0, redScore = 0, greenScore = MyScore;
+		foreach (Friend f in friends) {
+			if (f.GetColor().Equals(Color.red)) {
+				redScore = f.Score;
 			}
 			else {
-				blueScore = o.Score;
+				blueScore = f.Score;
 			}
 		}
+
+		if (Tutorial.InTutorial) { //Override whatever values came from above for example values:
+			redScore = Tutorial.RedScore;
+			blueScore = Tutorial.BlueScore;
+			greenScore = Tutorial.MyScore;
+		}
+
+		int scoreSum = redScore + blueScore + greenScore;
 
 		scoreText.text = scoreSum + "/" + Goal;
 		if (!MulticolorBar) {
@@ -220,7 +231,7 @@ public class Controller : MonoBehaviour {
 		else {
 			float blueWid = ModifyBarTransform(blueBar, blueScore, 0);
 			float redWid = ModifyBarTransform(redBar, redScore, blueWid);
-			float greenWid = ModifyBarTransform(greenBar, MyScore, blueWid + redWid);
+			float greenWid = ModifyBarTransform(greenBar, greenScore, blueWid + redWid);
 			ModifyBarTransform(emptyBar, Goal - scoreSum, blueWid + redWid + greenWid);
 		}
 	}
@@ -249,29 +260,24 @@ public class Controller : MonoBehaviour {
 	}
 
 	void OnSocketUpdate(SocketIOEvent e) {
-		if (opponents[0].GetId().Equals("")) { 
+		if (friends[0].GetId().Equals("")) { 
 			//If this is the first update, assign ids:
 			int ind = 0;
 			foreach (string key in e.data["users"].keys) {
-				if (!key.Equals(myId)) {
-					opponents[ind++].SetId(key);
+				if (!key.Equals(MyId)) {
+					friends[ind++].SetId(key);
 				}
 			}
 		}
 		else {
-			foreach (Opponent o in opponents) {
-				//o.AdjustTransform(e.data["users"], !setInitialPositions);
+			foreach (Friend f in friends) {
+				//f.AdjustTransform(e.data["users"], !setInitialPositions);
 				//TODO uncomment above line
 			}
 			setInitialPositions = true;
 		}
 
-		int time_ms = (int) e.data["time"].f;
-		int seconds_total = Mathf.FloorToInt(time_ms / 1000f);
-		int minutes = Mathf.FloorToInt(seconds_total / 60f);
-		int seconds = seconds_total % 60;
-		timeText.text = (minutes > 9 ? "" : " ") + minutes + ":"
-		                + (seconds > 9 ? "" : "0") + seconds;
+		timeText.text = ParseMilliseconds((int) e.data["time"].f);
 
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("position", SerializeVector3(transform.localPosition));
@@ -281,9 +287,17 @@ public class Controller : MonoBehaviour {
 		socket.Emit("update", send);
 	}
 
+	public static string ParseMilliseconds(int time_ms) {
+		int seconds_total = Mathf.FloorToInt(time_ms / 1000f);
+		int minutes = Mathf.FloorToInt(seconds_total / 60f);
+		int seconds = seconds_total % 60;
+		return (minutes > 9 ? "" : " ") + minutes + ":"
+		       + (seconds > 9 ? "" : "0") + seconds;
+	}
+
 
 	public static Vector3 GetMyPosition() {
-		return controllerGameObject.transform.localPosition;
+		return interfaceTransform.localPosition;
 	}
 
 	public static JSONObject SerializeVector3(Vector3 v) {
@@ -323,8 +337,10 @@ public class Controller : MonoBehaviour {
 	}
 
 	public void AdjustMyLight() {
-		if (light.range > MinRange) {
-			light.range -= ConstDecrease * Time.deltaTime;
+		if (LightDecreasing) {
+			if (light.range > MinRange) {
+				light.range -= ConstDecrease * Time.deltaTime;
+			}
 		}
 
 		if (MyCoinsOwned > 0) {
@@ -381,18 +397,25 @@ public class Controller : MonoBehaviour {
 				flying = true;
 			}
 			if (Input.GetKeyDown(KeyCode.S)) {
-				bool __ = flying ? slowingDown = !slowingDown : flying = true;
+				if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+					bool __ = flying ? slowingDown = !slowingDown : flying = true;
+				}
 			}
 
 			if (Input.GetMouseButtonDown(0)) {
-				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-				RaycastHit hit;
+				if (!Tutorial.InTutorial || 
+				    Tutorial.CurrStep != Tutorial.ShowBucketsStep &&
+				    Tutorial.CurrStep != Tutorial.ShowBucketsStep + 1) {
+					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+					RaycastHit hit;
 
-				if (Physics.Raycast(ray, out hit)) {
-					if (hit.transform.tag.Equals("Not Me")) {
-						//ShowGenerosity(hit.transform.GetComponent<Opponent>());
-					} else if (hit.transform.tag.Equals("Bucket")) {
-						buckets.HandleClick(hit.transform);
+					if (Physics.Raycast(ray, out hit)) {
+						if (hit.transform.tag.Equals("Not Me")) {
+							//ShowGenerosity(hit.transform.GetComponent<Friend>());
+						}
+						else if (hit.transform.tag.Equals("Bucket")) {
+							buckets.HandleClick(hit.transform);
+						}
 					}
 				}
 			}
@@ -454,11 +477,11 @@ public class Controller : MonoBehaviour {
 		}
 	}
 
-	Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
-		if (!disableVR) {
-			return transform.GetChild(0).GetChild(0).localRotation;
+	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
+		if (!interfaceTransform.GetComponent<Interface>().disableVR) {
+			return interfaceTransform.GetChild(0).GetChild(0).localRotation;
 		}
-		return transform.localRotation;
+		return interfaceTransform.localRotation;
 	}
 
 	/*void Boost(float boostFactor) {

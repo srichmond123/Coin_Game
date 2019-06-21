@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 
-public class Opponent : MonoBehaviour {
+public class Friend : MonoBehaviour {
 	// Start is called before the first frame update
-	public static bool colorTaken = false; //Static global allows Opponent object to handle diff opponent colors internally
+	public static bool colorTaken = false; //Static global allows Friend object to handle diff friend colors internally
 	
 	private string id = "";
 	private Vector3 targetPosition = Vector3.zero, oldPosition = Vector3.zero;
@@ -93,7 +93,7 @@ public class Opponent : MonoBehaviour {
 
 	//Turn raw server data into position, rotation for specific this.id:
 	public void AdjustTransform(JSONObject data, bool hardSet) {
-		//JSONObject myData = data[Controller.myId];
+		//JSONObject myData = data[Controller.MyId];
 		JSONObject myData = data[id];
 		JSONObject pos = myData["position"];
 		JSONObject rot = myData["rotation"];
@@ -109,8 +109,8 @@ public class Opponent : MonoBehaviour {
 			}
 		}*/
 
-		Vector3 tPosition = Controller.DeserializeVector3(pos) + new Vector3(10, 0, 10);
-		Quaternion tRotation = Controller.DeserializeQuaternion(rot);
+		Vector3 tPosition = Interface.DeserializeVector3(pos) + new Vector3(10, 0, 10);
+		Quaternion tRotation = Interface.DeserializeQuaternion(rot);
 
 		Transform t = transform;
 		if (hardSet) {
