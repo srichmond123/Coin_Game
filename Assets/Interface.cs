@@ -18,15 +18,17 @@ using Vector2 = UnityEngine.Vector2;
 public class Interface : MonoBehaviour {
 	public static Color NullColor => Color.magenta;
 
-	public static float MinRange => 10f;
-	public static float MaxRange => 200f; //Maybe infinite
-	public static float OwnRangeIncrease => 32f;
-	public static float OtherRangeIncrease => 32f;
-	public static float ConstDecrease => 2.0f; // ConstDecrease * Time.deltaTime (per frame)
-	public static float InitialRange => 80f;
-	public static float MaxSpeed => 4f;
-	public static float SpeedIncrement => 2.5f;
-	public static float SpeedDecrement => 4f; //Stop faster
+	public const float 
+		MinRange = 15f,
+		MaxRange = 200f,
+		OwnRangeIncrease = 32f, 
+		OtherRangeIncrease = 32f, 
+		ConstDecrease = 2.0f, 
+		InitialRange = 80f, 
+		MaxSpeed = 4f, 
+		SpeedIncrement = 2.5f,
+		SpeedDecrement = 4f;
+
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	public static bool MulticolorBar => true;
 	static float heightThreshold => 0.8f; //How high user can be above terrain Y
@@ -66,6 +68,8 @@ public class Interface : MonoBehaviour {
 	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
+	
+	private static bool InLobby = false;
 
 	void Start() {
 		if (disableVR) {
@@ -103,6 +107,12 @@ public class Interface : MonoBehaviour {
 
 		scoreText.enabled = false;
 		timeText.enabled = false;
+		buckets.HardSet(false); //Hide for tutorial
+	}
+
+
+	public static void ToggleLobby(bool inLobby) {
+		InLobby = inLobby;
 	}
 
 	void HandleRejection(SocketIOEvent e) {
@@ -138,6 +148,8 @@ public class Interface : MonoBehaviour {
 			f.OtherCoins = 0;
 			f.MyCoins = 0;
 		}
+
+		buckets.HardSet(true); //Invisible in lobby (might still be waiting on connections)
 		buckets.Hide();
 		flying = false;
 		slowingDown = false;
@@ -152,6 +164,8 @@ public class Interface : MonoBehaviour {
 		boundaries.Set(MapOrigin, MapScale);
 		boundaries.SetScenery();
 		timeText.text = " 0:00";
+		
+		ToggleLobby(false);
 	}
 
 	void ShowGenerosity(Friend friend) {
@@ -237,19 +251,6 @@ public class Interface : MonoBehaviour {
 	}
 
 	static float ModifyBarTransform(Transform t, int score, float translate) {
-		/*
-		Vector2 offsetMax = rectTransform.offsetMax;
-		Vector2 offsetMin = rectTransform.offsetMin;
-		float oldX = offsetMax.x;
-		offsetMax.x = -(score * 1.0f / Goal * (MaxScoreRight - ZeroScoreRight) + ZeroScoreRight);
-		//offsetMin.x = minX;
-		rectTransform.offsetMax = offsetMax;
-		rectTransform.offsetMin = offsetMin;
-		float width = offsetMax.x - oldX;
-		Vector3 position = rectTransform.localPosition;
-		position.x = -66.5f; // + translate;
-		rectTransform.localPosition = position;
-		*/
 		Vector3 scale = t.localScale;
 		Vector3 position = t.localPosition;
 		scale.x = (score * 1.0f / Goal) * MaxScale;
@@ -268,6 +269,8 @@ public class Interface : MonoBehaviour {
 					friends[ind++].SetId(key);
 				}
 			}
+			buckets.Show();
+			buckets.Hide();
 		}
 		else {
 			foreach (Friend f in friends) {
@@ -336,7 +339,7 @@ public class Interface : MonoBehaviour {
 		);
 	}
 
-	public void AdjustMyLight() {
+	private void AdjustMyLight() {
 		if (LightDecreasing) {
 			if (light.range > MinRange) {
 				light.range -= ConstDecrease * Time.deltaTime;
@@ -403,21 +406,22 @@ public class Interface : MonoBehaviour {
 			}
 
 			if (Input.GetMouseButtonDown(0)) {
-				if (!Tutorial.InTutorial || 
-				    Tutorial.CurrStep != Tutorial.ShowBucketsStep &&
-				    Tutorial.CurrStep != Tutorial.ShowBucketsStep + 1) {
-					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-					RaycastHit hit;
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
 
-					if (Physics.Raycast(ray, out hit)) {
-						if (hit.transform.tag.Equals("Not Me")) {
-							//ShowGenerosity(hit.transform.GetComponent<Friend>());
-						}
-						else if (hit.transform.tag.Equals("Bucket")) {
-							buckets.HandleClick(hit.transform);
-						}
-					}
-				}
+                if (Physics.Raycast(ray, out hit)) {
+                    if (hit.transform.tag.Equals("Not Me")) {
+                        //ShowGenerosity(hit.transform.GetComponent<Friend>());
+                    }
+                    else if (hit.transform.tag.Equals("Bucket")) {
+                        buckets.HandleClick(hit.transform);
+                    }
+                }
+                else {
+	                if (Tutorial.InTutorial) {
+		                Tutorial.TellClicked();
+	                }
+                }
 			}
 		}
 
@@ -483,14 +487,4 @@ public class Interface : MonoBehaviour {
 		}
 		return interfaceTransform.localRotation;
 	}
-
-	/*void Boost(float boostFactor) {
-		if (boostTime <= 0f) {
-			//User is pressing B and not currently boosting, use coin:
-			if (boostFactor.Equals(MYCOIN_BOOST_FACTOR)) MyCoinsOwned--;
-			else OtherCoinsOwned--;
-			boostTime = BOOST_TIME;
-			currBoost = boostFactor;
-		}
-	}*/
 }

@@ -27,7 +27,7 @@ public class CoinManager : MonoBehaviour {
 
 	[Obsolete("Only use in tutorial")]
 	public void AppendToList(GameObject coin) {
-		coin.GetComponent<CoinScript>().index = coins.Count;
+		coin.GetComponent<Coin>().index = coins.Count;
 		coins.Add(coin);
 	}
 
@@ -40,7 +40,7 @@ public class CoinManager : MonoBehaviour {
 		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
 		inst.GetComponent<Collider>().enabled = true;
-		CoinScript cs = inst.GetComponent<CoinScript>();
+		Coin cs = inst.GetComponent<Coin>();
 		Color c = id == Interface.MyId ? Color.green : Interface.GetFriendById(id).GetColor();
 		cs.SetColor(c);
 		cs.SetId(id);
@@ -92,7 +92,7 @@ public class CoinManager : MonoBehaviour {
 				if (id.Equals(Interface.MyId)) {
 					inst.layer = LayerMask.NameToLayer("My Coins");
 				}
-				CoinScript cs = inst.GetComponent<CoinScript>();
+				Coin cs = inst.GetComponent<Coin>();
 				cs.SetColor(c);
 				cs.SetId(id);
 				cs.SetParent(this);

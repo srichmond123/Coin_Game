@@ -6,15 +6,18 @@ using Quaternion = UnityEngine.Quaternion;
 public class ControllerHelper : MonoBehaviour {
 	// Start is called before the first frame update
 	private Transform controllerMesh, circle;
-	private const int TriggerState = 0, AButtonState = 1;
 	private int state = 0;
 	private bool _visible = true;
 
-	private Quaternion showTriggerMeshRotation
+	private static float rightZ => 1.2f;
+	private static float leftZ => -1.2f; //Z scale for mesh
+	private Quaternion showRightTriggerMeshRotation
 		=> Quaternion.Euler(new Vector3(0.183f, -89.899f, 33.52f));
-	private Vector3 showTriggerCirclePosition
+	private Vector3 showRightTriggerCirclePosition
 		=> new Vector3(0.2034f, -1.5976f, 1.5155f);
-	private Vector3 showTriggerCircleScale
+	private Vector3 showLeftTriggerCirclePosition
+		=> new Vector3(0.24f, -1.5975f, 1.51f);
+	private Vector3 showRightTriggerCircleScale
 		=> new Vector3(0.005000009f, 0.005000006f, 0.005000009f);
 
 	private Quaternion showAButtonMeshRotation
@@ -44,6 +47,9 @@ public class ControllerHelper : MonoBehaviour {
 	public void ShowAButton() {
 		SetVisible(true);
 		controllerMesh.localRotation = showAButtonMeshRotation;
+		Vector3 meshScale = controllerMesh.localScale;
+		meshScale.z = rightZ;
+		controllerMesh.localScale = meshScale;
 		circle.localPosition = showAButtonCirclePosition;
 		circle.localScale = showAButtonCircleScale;
 	}
@@ -51,15 +57,31 @@ public class ControllerHelper : MonoBehaviour {
 	public void ShowBButton() {
 		SetVisible(true);
 		controllerMesh.localRotation = showAButtonMeshRotation;
+		Vector3 meshScale = controllerMesh.localScale;
+		meshScale.z = rightZ;
+		controllerMesh.localScale = meshScale;
 		circle.localPosition = showBButtonCirclePosition;
 		circle.localScale = showAButtonCircleScale;
 	}
 
-	public void ShowTrigger() {
+	public void ShowRightTrigger() {
 		SetVisible(true);
-		controllerMesh.localRotation = showTriggerMeshRotation;
-		circle.localPosition = showTriggerCirclePosition;
-		circle.localScale = showTriggerCircleScale;
+		Vector3 meshScale = controllerMesh.localScale;
+		meshScale.z = rightZ;
+		controllerMesh.localScale = meshScale;
+		controllerMesh.localRotation = showRightTriggerMeshRotation;
+		circle.localPosition = showRightTriggerCirclePosition;
+		circle.localScale = showRightTriggerCircleScale;
+	}
+
+	public void ShowLeftTrigger() {
+		SetVisible(true);
+		Vector3 meshScale = controllerMesh.localScale;
+		meshScale.z = leftZ;
+		controllerMesh.localScale = meshScale;
+		controllerMesh.localRotation = showRightTriggerMeshRotation;
+		circle.localScale = showRightTriggerCircleScale;
+		circle.localPosition = showLeftTriggerCirclePosition;
 	}
 
 	// Update is called once per frame

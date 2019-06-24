@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class CoinScript : MonoBehaviour {
+public class Coin : MonoBehaviour {
 	// Start is called before the first frame 
 	private string id;
 	public int index = -1;

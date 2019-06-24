@@ -7,13 +7,12 @@ using UnityEngine;
 
 public class Buckets : MonoBehaviour {
 	private int coins = 0;
-	public static SocketIOComponent socket;
+	private static SocketIOComponent socket;
 	public GameObject crossPrefab;
 
 	private bool colorsInitialized = false;
 	private GameObject crossInstance;
 	void Start() {
-		Hide();
 		GameObject sockObject = GameObject.Find("SocketIO");
 		socket = sockObject.GetComponent<SocketIOComponent>();
 	}
@@ -30,13 +29,22 @@ public class Buckets : MonoBehaviour {
 		return coins;
 	}
 
-	public void Hide() {
-		//TODO make transluscent
+	public void HardSet(bool b) {
 		foreach (Transform child in transform) {
-			child.gameObject.SetActive(false);
+			child.gameObject.SetActive(b);
+		}
+	}
+	
+	public void Hide() {
+		foreach (Transform child in transform) {
+			Color col = GetBucketColor(child);
+			col.a = 0.08f;
+			SetChildColor(child, col);
+			colorsInitialized = false;
+			//child.gameObject.SetActive(false);
 		}
 		
-		Destroy(crossInstance);
+		//Destroy(crossInstance);
 		coins = 0;
 	}
 
@@ -49,10 +57,10 @@ public class Buckets : MonoBehaviour {
 		}
 	}
 
-	private void Show() {
+	public void Show() {
 		int idx = 0;
 		foreach (Transform child in transform) {
-			child.gameObject.SetActive(true);
+			//child.gameObject.SetActive(true);
 			if (idx == 1) {
 				if (!colorsInitialized) {
 					SetChildColor(child, Color.green);
@@ -60,19 +68,27 @@ public class Buckets : MonoBehaviour {
 			}
 			else {
 				Friend friendSet = Interface.friends[idx == 0 ? 0 : 1];
+				float albedo = 1f;
 				if (!Tutorial.InTutorial) {// || idx == 0) {
 					if (!Interface.permissibleIndividuals.Contains(friendSet.GetId())) {
+						/*
 						GameObject inst = Instantiate(crossPrefab, GameObject.Find("TrackingSpace").transform);
 						inst.transform.position = child.position;
 						inst.transform.Translate(new Vector3(0, 0.203f, -0.134f));
-						//if (crossInstance != null) Destroy(crossInstance);
-						crossInstance = inst; //TODO make transluscent
+						crossInstance = inst;
+						*/
+						albedo = 0.1f;
 					}
+				} else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExample) {
+					albedo = 0.1f;
 				}
 
 				if (!colorsInitialized) {
-					SetChildColor(child, !Tutorial.InTutorial 
-						? friendSet.GetColor() : (idx == 0 ? Color.blue : Color.red));
+					Color col = !Tutorial.InTutorial
+						? friendSet.GetColor()
+						: (idx == 0 ? Color.blue : Color.red);
+					col.a = albedo;
+					SetChildColor(child, col);
 				}
 			}
 			idx++;
@@ -107,51 +123,63 @@ public class Buckets : MonoBehaviour {
 		foreach (Transform child in transform) {
 			Color bucketColor = GetBucketColor(child);
 			Transform bar = null;
-			if (bucketColor.Equals(Color.green)) {
+			if (CompareRGB(bucketColor, Color.green)) {
 				bar = child.GetChild(child.childCount - 1);
 				ScaleTo(bar, Interface.light.range / 50f);
 			}
 			else {
-				foreach (Friend f in Interface.friends) {
-					if (GetBucketColor(child).Equals(f.GetColor())) {
-						bar = child.GetChild(child.childCount - 1);
-						ScaleTo(bar, f.GetRange() / 50f);
-						//Vector3 scale = bar.localScale;
-						//scale.y = o.GetRange() / 50f;
-						//bar.localScale = scale;
+				if (!Tutorial.InTutorial) {
+					foreach (Friend f in Interface.friends) {
+						if (CompareRGB(bucketColor, f.GetColor())) {
+							bar = child.GetChild(child.childCount - 1);
+							float scale = f.GetRange() / 50f;
+							ScaleTo(bar, scale);
+						}
 					}
+				}
+				else {
+					bar = child.GetChild(child.childCount - 1);
+					ScaleTo(bar, Tutorial.GetFriendRange(bucketColor));
 				}
 			}
 		}
+	}
+
+	public static bool CompareRGB(Color a, Color b) {
+		return a.r.Equals(b.r) && a.g.Equals(b.g) && a.b.Equals(b.b);
 	}
 
 	public void HandleClick(Transform t) {
 		Color c = GetBucketColor(t);
 		
 		if (coins > 0) {
-			if (c.Equals(Color.green)) {
-				Interface.MyCoinsOwned++;
-				socket.Emit("claim");
-			}
-			else {
-				foreach (Friend friend in Interface.friends) {
-					if (friend.GetColor().Equals(c)) {
-						if (Interface.permissibleIndividuals.Contains(friend.GetId())) {
-							Dictionary<string, string> dict = new Dictionary<string, string>();
-							dict["id"] = friend.GetId();
-							socket.Emit("give", new JSONObject(dict));
-							friend.OtherCoins++;
-						}
-						else {
-							return;
+			if (!Tutorial.InTutorial) {
+				if (CompareRGB(c, Color.green)) {
+					Interface.MyCoinsOwned++;
+					socket.Emit("claim");
+				}
+				else {
+					foreach (Friend friend in Interface.friends) {
+						if (CompareRGB(friend.GetColor(), c)) {
+							if (Interface.permissibleIndividuals.Contains(friend.GetId())) {
+								Dictionary<string, string> dict = new Dictionary<string, string>();
+								dict["id"] = friend.GetId();
+								socket.Emit("give", new JSONObject(dict));
+								friend.OtherCoins++;
+							}
+							else {
+								return;
+							}
 						}
 					}
 				}
-			}
-			if (--coins == 0) {
-				Hide();
+
+				if (--coins == 0) {
+					Hide();
+				}
 			}
 		}
+		if (Tutorial.InTutorial) Tutorial.HandleBucketClick(c);
 	}
 
 	void Update() {

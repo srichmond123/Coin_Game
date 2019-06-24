@@ -20,7 +20,15 @@ public class Tutorial : MonoBehaviour {
 		ShowCoinRulesStep = 5,
 		ShowCoinsStep = 6,
 		ShowBucketsStep = 7,
-		TryBucketsStep = 8;
+		TryBucketsStep = 8,
+		CollectSecondTime = 9,
+		ShareBlue = 10,
+		CollectThirdTime = 11,
+		ShareRed = 12,
+		TopologyExplanation = 13,
+		TopologyExample = 14,
+
+		EndStep = 15;
 
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
@@ -42,13 +50,15 @@ public class Tutorial : MonoBehaviour {
 	private static float arrowXRotationTimer => arrowXRotationScoreText;
 
 	public static int MyScore = 0, RedScore = 0, BlueScore = 0;
+	private static float RedRange = 100f;
+	private static float BlueRange = 60f;
 	private static float timeCount = -1f;
 	private static string currTimeStr = " 0:00";
 	void Start() {
 		HelpText = GetComponentInChildren<TextMeshPro>();
-		HelpText.text = STEP_TEXTS[CurrStep];
+		HelpText.text = StepTexts[CurrStep];
 		controllerHelper = GetComponentInChildren<ControllerHelper>();
-		controllerHelper.ShowTrigger();
+		controllerHelper.ShowRightTrigger();
 		disableVR = GetComponentInParent<Interface>().disableVR;
 		instances = new List<GameObject>(); //To collect instantiated prefabs and destroy later
 		coinManager = GameObject.Find("I manage coins").GetComponent<CoinManager>();
@@ -61,24 +71,37 @@ public class Tutorial : MonoBehaviour {
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
 	}
 
+	public static void TellClicked() {
+        if (CurrStep < ShowCoinsStep || CurrStep == ShowBucketsStep || CurrStep >= TopologyExplanation) {
+            NextStep();
+        }
+	}
+
 	// Update is called once per frame
 	void Update() {
-		if (!disableVR) {
-			//TODO VR controller Tutorial screen change
-		}
-		else {
-			if (Input.GetMouseButtonDown(0) && CurrStep != ShowCoinsStep) {
-				NextStep();
-			} else if (Input.GetKey(KeyCode.S) && CurrStep == ShowCoinsStep) {
-				Interface.light.range = Mathf.Max(45f, Interface.light.range - 20.0f * Time.deltaTime);
+		if (CurrStep < EndStep) {
+			if (!disableVR) {
+				//TODO VR controller Tutorial screen change
 			}
-		}
+			else {
+				if (CurrStep >= ShowBucketsStep) {
+					float decr = CurrStep == ShowBucketsStep ? 5f : Interface.ConstDecrease;
+					Interface.light.range = Mathf.Max(Interface.MinRange + 10f, Interface.light.range - decr * Time.deltaTime);
+					RedRange = Mathf.Max(Interface.MinRange + 10f, RedRange - decr * Time.deltaTime);
+					BlueRange = Mathf.Max(Interface.MinRange + 10f, BlueRange - decr * Time.deltaTime);
+				}
 
-		if (timeCount >= 0f) {
-			timeCount += Time.deltaTime;
-			currTimeStr = Interface.ParseMilliseconds((int) (timeCount * 1000));
-			if (!Interface.timeText.text.Equals(currTimeStr)) {
-				Interface.timeText.text = currTimeStr;
+				if (Input.GetKeyDown(KeyCode.Space)) {
+					EndTutorial();
+				}
+			}
+
+			if (timeCount >= 0f) {
+				timeCount += Time.deltaTime;
+				currTimeStr = Interface.ParseMilliseconds((int) (timeCount * 1000));
+				if (!Interface.timeText.text.Equals(currTimeStr)) {
+					Interface.timeText.text = currTimeStr;
+				}
 			}
 		}
 	}
@@ -90,8 +113,57 @@ public class Tutorial : MonoBehaviour {
 		helpArrow.transform.localEulerAngles = eulerAngles;
 	}
 
+	public static void HandleBucketClick(Color col) { //Handle tutorial bucket behavior internally:
+		switch (CurrStep) {
+			case ShowBucketsStep: {
+				NextStep();
+				break;
+			}
+			case TryBucketsStep: {
+				if (Buckets.CompareRGB(Color.green, col)) {
+					Interface.buckets.Hide();
+					Interface.MyCoinsOwned += 1;
+					NextStep();
+				}
+				break;
+			}
+
+			case ShareBlue: {
+				if (Buckets.CompareRGB(Color.blue, col)) {
+					Interface.buckets.Hide();
+					BlueRange += Interface.OtherRangeIncrease;
+					NextStep();
+				}
+				break;
+			}
+
+			case ShareRed: {
+				if (Buckets.CompareRGB(Color.red, col)) {
+					Interface.buckets.Hide();
+					RedRange += Interface.OtherRangeIncrease;
+					NextStep();
+				}
+				break;
+			}
+
+			case TopologyExplanation: {
+				NextStep();
+				break;
+			}
+
+			case TopologyExample: {
+				NextStep();
+				break;
+			}
+		}
+	}
+
+	public static float GetFriendRange(Color c) {
+		return Buckets.CompareRGB(c, Color.blue) ? BlueRange / 50f : RedRange / 50f;
+	}
+
 	public static void NextStep() {
-		HelpText.text = STEP_TEXTS[++CurrStep];
+		HelpText.text = StepTexts[++CurrStep];
 		switch (CurrStep) {
 			case ShowFriendsStep: {
 				SpawnWhales();
@@ -134,13 +206,15 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case ShowCoinsStep: {
-				controllerHelper.ShowAButton(); //TODO dont allow swimming until now
+				controllerHelper.ShowAButton();
 				break;
 			}
 
 			case ShowBucketsStep: {
 				MyScore = 1;
 				controllerHelper.SetVisible(false);
+				Interface.buckets.HardSet(true);
+				Interface.UpdateScore();
 				break;
 			}
 
@@ -149,7 +223,44 @@ public class Tutorial : MonoBehaviour {
 				break;
 			}
 
-			default: {
+			case CollectSecondTime: {
+				controllerHelper.ShowAButton();
+				SpawnCoin(Color.green, offset: 0f);
+				SpawnCoin(Color.blue, offset: 3f);
+				break;
+			}
+
+			case ShareBlue: {
+				MyScore = 2;
+				controllerHelper.ShowLeftTrigger();
+				Interface.UpdateScore();
+				break;
+			}
+
+			case CollectThirdTime: {
+				controllerHelper.ShowAButton();
+				SpawnCoin(Color.green, offset: -1f);
+				break;
+			}
+
+			case ShareRed: {
+				MyScore = 3;
+				controllerHelper.ShowRightTrigger();
+				Interface.UpdateScore();
+				break;
+			}
+
+			case TopologyExplanation: {
+				controllerHelper.SetVisible(false);
+				break;
+			}
+
+			case TopologyExample: {
+				Interface.buckets.Show();
+				break;
+			}
+			
+			case EndStep: {
 				EndTutorial();
 				break;
 			}
@@ -166,17 +277,18 @@ public class Tutorial : MonoBehaviour {
 	
 	private static void SpawnCoin(Color col, float offset) {
 		GameObject inst = Instantiate(coinPrefab);
-		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 7f + myTransform.right * offset;
-		position.y += terrainScript.transform.localPosition.y + 1.2f;
+		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 4.5f + myTransform.right * offset;
+		position.y = terrainScript.transform.localPosition.y + 4.2f;
 		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
 		inst.GetComponent<Collider>().enabled = true;
-		CoinScript cs = inst.GetComponent<CoinScript>();
-		cs.SetColor(col); 
-		cs.SetId(col.Equals(Color.green) ? Interface.MyId : "");
-		cs.SetParent(coinManager);
-		cs.SetAlbedo(0f);
+		Coin cn = inst.GetComponent<Coin>();
+		cn.SetColor(col); 
+		cn.SetId(col.Equals(Color.green) ? Interface.MyId : "");
+		cn.SetParent(coinManager);
+		cn.SetAlbedo(0f);
 		coinManager.AppendToList(inst);
+		instances.Add(inst);
 	}
 
 	private static void SpawnWhales() {
@@ -194,7 +306,7 @@ public class Tutorial : MonoBehaviour {
 		instances.Add(blueInst);
 	}
 	
-	private static string[] STEP_TEXTS => new[] {
+	private static string[] StepTexts => new[] {
 		"Hello and thank you for your participation. " +
 		"You will now go through a short tutorial.\n\n" +
 		"To start, press the trigger on your right hand controller by your index finger:",
@@ -223,8 +335,8 @@ public class Tutorial : MonoBehaviour {
 		"\n\n\n\nSome coins are available in front of you. Try to swim to the <color=green>green</color> coin " +
 		"by pressing and holding the A button on your controller:",
 		
-		"\n\n\n\nYou may have noticed your visibility going down.\n" +
-		"Throughout each trial, you and your teammates will lose visibility at a constant rate.\n\n" +
+		"\n\n\n\nYou may notice your visibility decreasing.\n" +
+		"Throughout gameplay, you and your teammates will <b>continuously</b> lose visibility.\n\n" +
 		"After collecting a coin, you will be shown 3 buckets.\n" +
 		"\n(Press your right trigger to continue)",
 		
@@ -232,22 +344,49 @@ public class Tutorial : MonoBehaviour {
 		"or to one of your teammates. Whoever you give it to will receive a boost in their visibility.\n\n" +
 		"Try to give it to yourself by pressing B on your right controller:",
 		
+		"\n\n\n\n.You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
+		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
+		
+		"\n\n\n\nNow, try giving this coin to your <color=blue>blue</color> teammate by pressing the trigger " +
+		"on your <b>left</b> hand:",
+		
+		"\n\n\n\nTry swimming to the coin in front of you again by pressing and holding A:",
+		
+		"\n\n\n\nNow, try to give this coin to your <color=red>red</color> teammate by pressing the trigger " +
+		"on your <b>right</b> hand:",
+		
+		"\n\n\n\nAs explained earlier, this experiment will consist of 3 rounds, where each round, you and " +
+		"your team try to earn " + Interface.Goal + " points as quickly as possible.\n\n" +
+		"Each round, one or both of your teammates' buckets might be transparent, meaning that you will be " +
+		"<b>unable</b> to share coins with that player in that round. (Press your right trigger to continue)",
+		
+		"\n\n\n\nFor instance, this is what you would see if you could share with your <color=blue>blue</color> " +
+		"teammate,\nbut <b>not</b> with your <color=red>red</color> teammate." +
+		"\nYou will always be able to share coins with yourself, no matter the round." +
+		"\n\n(Press your right trigger to continue)",
+		
 		//TODO explain cross. Describe 3 trials, how they can quit at any time, etc.
 		
 		"END",
 	};
 	
 	private static void EndTutorial() {
+		DestroyAllInstances();
+		CurrStep = EndStep;
 		Interface.socket.enabled = true;
 		Interface.scoreText.enabled = true;
 		Interface.timeText.enabled = true;
 		Interface.timeText.text = " 0:00"; //TODO lobby
 		InTutorial = false;
 		Interface.LightDecreasing = true;
+		Interface.MyScore = 0;
+		Interface.UpdateScore();
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
 		controllerHelper.SetVisible(false);
 		HelpText.enabled = false;
+		Interface.buckets.HardSet(false);
 		timeCount = -1f;
+		Interface.ToggleLobby(true);
 	}
 }
 
