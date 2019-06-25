@@ -30,6 +30,8 @@ public class Interface : MonoBehaviour {
 		SpeedIncrement = 2.5f,
 		SpeedDecrement = 4f;
 
+	private const int CountdownTimeMs = 10 * 1000;
+
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
 	static float heightThreshold => 0.8f; //How high user can be above terrain Y
@@ -39,7 +41,7 @@ public class Interface : MonoBehaviour {
 	//private const int MaxScoreRight = -200;
 	private const float MaxScale = 0.18f;
 
-	public bool disableVR;
+	public static bool DisableVr = true;
 
 	private float speed = 4f;
 	public static SocketIOComponent socket;
@@ -63,22 +65,25 @@ public class Interface : MonoBehaviour {
 	public static Buckets buckets;
 	private float luminosity = 0.2f;
 	public static Light light;
-	private static Transform interfaceTransform;
-	public static TextMeshPro scoreText, timeText, lobbyText;
+	private static Transform _interfaceTransform, _centerEyeTransform;
+	public static TextMeshPro scoreText, timeText, lobbyText, countdownText;
 	private static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
 	
-	private static bool InLobby = false;
+	private static bool _inLobby = false;
 	public static bool TutorialBoundarySet = false;
-
+	private static bool _inCountdown = false;
+	private static int _elapsedMs = 0;
 	private static float _boundaryX, _boundaryZ, _boundarySlope;
 	private static bool _boundaryBlockBelowLine;
 	private static LoadingCircle _loadingCircle;
+	private static int RoundNum = 0; //1, 2, or 3 for simplicity - Socket start emission will incr. this to 1 at first
+	private static string PrevRoundScoreText = "";
 
-	void Start() {
-		if (disableVR) {
+	private void Start() {
+		if (DisableVr) {
 			XRSettings.LoadDeviceByName("");
 			XRSettings.enabled = false;
 		}
@@ -91,15 +96,17 @@ public class Interface : MonoBehaviour {
 		socket = GameObject.Find("SocketIO").GetComponent<SocketIOComponent>();
 
 		socket.On("start", HandleStart);
-		socket.On("update", OnSocketUpdate);
+		socket.On("update", HandleUpdate);
 		socket.On("give", HandleGenerosity);
 		socket.On("getOut", HandleRejection);
 		socket.On("newConnection", HandleNewConnection);
 		light = GameObject.Find("My Light").GetComponent<Light>();
-		interfaceTransform = transform; //Since there's only one of these this is fine
+		_interfaceTransform = transform; //Since there's only one of these this is fine
+		_centerEyeTransform = GameObject.Find("CenterEyeAnchor").transform;
 		scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshPro>();
 		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
 		lobbyText = GameObject.Find("LobbyText").GetComponent<TextMeshPro>();
+		countdownText = GameObject.Find("CountdownText").GetComponent<TextMeshPro>();
 		scoreBar = GameObject.Find("Bar").transform;
 		redBar = GameObject.Find("RedBar").transform;
 		blueBar = GameObject.Find("BlueBar").transform;
@@ -117,25 +124,32 @@ public class Interface : MonoBehaviour {
 
 		_loadingCircle = GameObject.Find("LoadingCircle").GetComponent<LoadingCircle>();
 		_loadingCircle.Set(false);
+		countdownText.enabled = false;
 	}
 
 
 	public static void ToggleLobby(bool inLobby) {
-		InLobby = inLobby;
+		_inLobby = inLobby;
 		lobbyText.enabled = inLobby;
 		_loadingCircle.Set(inLobby);
 	}
 
-	void HandleRejection(SocketIOEvent e) {
-		//TODO Thank you screen, etc.
+	private void HandleRejection(SocketIOEvent e) {
+		ToggleCountdown(true);
+		socket.enabled = false;
+		PrevRoundScoreText = "Your team finished round 3 in "
+                         + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
+                         "The game is over, thank you for your participation";
+		countdownText.text = PrevRoundScoreText;
 	}
 
-	void _displayCoins() {
+	private void _displayCoins() {
 		_MyCoins = MyCoinsOwned;
 		_OtherCoins = OtherCoinsOwned;
 	}
 
-	void HandleStart(SocketIOEvent e) {
+	private void HandleStart(SocketIOEvent e) {
+		RoundNum++;
 		Dictionary<string, string> res = e.data.ToDictionary();
 		MyId = res["id"];
 		Vector3 myPos = DeserializeVector3(e.data["position"]);
@@ -177,18 +191,29 @@ public class Interface : MonoBehaviour {
 		timeText.text = " 0:00";
 		
 		ToggleLobby(false);
-	}
+		ToggleCountdown(true);
 
-	void HandleNewConnection(SocketIOEvent e) {
-		int numLeft = (int) e.data["left"].f;
-		if (InLobby) {
-			lobbyText.text = "We are waiting for " + 
-                 numLeft + " more " + (numLeft == 1 ? "player" : "players");
-			
+		if (RoundNum > 1) { //Tell previous score in countdown waiting room:
+			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "
+			                     + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
 		}
 	}
 
-	void ShowGenerosity(Friend friend) {
+	private void HandleNewConnection(SocketIOEvent e) {
+		int numLeft = (int) e.data["left"].f;
+		if (_inLobby) {
+			lobbyText.text = "We are waiting for " + 
+                 numLeft + " more " + (numLeft == 1 ? "player" : "players");
+		}
+	}
+
+	private void ToggleCountdown(bool state) {
+		_inCountdown = state;
+		timeText.enabled = !state;
+		countdownText.enabled = state;
+	}
+
+	private void ShowGenerosity(Friend friend) {
 		string to = friend.GetId();
 		if (MyCoinsOwned == 0 || !permissibleIndividuals.Contains(to)) return;
 
@@ -198,7 +223,7 @@ public class Interface : MonoBehaviour {
 		socket.Emit("give", new JSONObject(dict));
 	}
 
-	void HandleGenerosity(SocketIOEvent e) {
+	private void HandleGenerosity(SocketIOEvent e) {
 		/*
 		 * Animate from friend obj with id e.data[from] to e.data[to],
 		 * or if e.data[to] == myId, animate from e.data[from] to me:
@@ -216,7 +241,7 @@ public class Interface : MonoBehaviour {
 	}
 	
 	[Obsolete("Map is way too big for this method to be useful")]
-	void VirtueSignal(Friend from, Friend to) {
+	private void VirtueSignal(Friend from, Friend to) {
 		Vector3 fromVec = from.transform.localPosition;
 		Vector3 toVec = to.transform.localPosition;
 		GameObject inst = Instantiate(arrowOfVirtue); 
@@ -280,7 +305,7 @@ public class Interface : MonoBehaviour {
 		return scale.x * 10f;
 	}
 
-	void OnSocketUpdate(SocketIOEvent e) {
+	private void HandleUpdate(SocketIOEvent e) {
 		if (friends[0].GetId().Equals("")) { 
 			//If this is the first update, assign ids:
 			int ind = 0;
@@ -299,8 +324,18 @@ public class Interface : MonoBehaviour {
 			}
 			setInitialPositions = true;
 		}
-
-		timeText.text = ParseMilliseconds((int) e.data["time"].f);
+		
+		_elapsedMs = (int) e.data["time"].f;
+		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
+        if (_inCountdown) {
+            int remainder = (int) Mathf.Round((CountdownTimeMs - _elapsedMs) / 1000f);
+            string text = "Round " + RoundNum + " starts in " + remainder 
+                          + (remainder == 1 ? " second" : " seconds");
+            
+            countdownText.text = PrevRoundScoreText + text;
+        } else {
+            timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
+		}
 
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("position", SerializeVector3(transform.localPosition));
@@ -320,7 +355,7 @@ public class Interface : MonoBehaviour {
 
 
 	public static Vector3 GetMyPosition() {
-		return interfaceTransform.localPosition;
+		return _interfaceTransform.localPosition;
 	}
 
 	public static JSONObject SerializeVector3(Vector3 v) {
@@ -381,12 +416,12 @@ public class Interface : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update() {
-		if (InLobby) {
+	private void Update() {
+		if (_inLobby || _inCountdown) {
 			
 		} else {
 			AdjustMyLight();
-			if (!disableVR) {
+			if (!DisableVr) {
 				if (OVRInput.GetDown(OVRInput.Button.One)) {
 					//A button pressed, right controller:
 					//Fly(speed * Time.deltaTime);
@@ -536,9 +571,9 @@ public class Interface : MonoBehaviour {
 	}
 
 	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
-		if (!interfaceTransform.GetComponent<Interface>().disableVR) {
-			return interfaceTransform.GetChild(0).GetChild(0).localRotation;
+		if (!DisableVr) {
+			return _centerEyeTransform.localRotation;
 		}
-		return interfaceTransform.localRotation;
+		return _interfaceTransform.localRotation;
 	}
 }

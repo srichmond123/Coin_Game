@@ -24,6 +24,7 @@ const NUM_CLUMPS = 10; //(per player);
 const NEW_CLUMP_MIN_TIME = 2000;
 const NEW_CLUMP_MAX_TIME = 5000;
 const NUM_EMPTY_CELLS = 50;
+const COUNTDOWN_TIME = 1000 * 10;
 var users = {}; //id as index, position and rotation stored
 var coinCount = {}; //id -> numOwnCoins, numOtherCoins
 var coinsToRegenerate = COINS_PER_PLAYER / NUM_CLUMPS; //Changes randomly each assignment
@@ -188,7 +189,7 @@ io.on('connection', (socket) => {
 			start();
 			startTime = -1;
 			update();
-			sendCoins();
+			setTimeout(() => sendCoins(), COUNTDOWN_TIME);
 
 			///TEST CODE HERE:
 			//let ids = Object.keys(users);
@@ -272,6 +273,7 @@ const nextRound = () => {
 	gameScore = 0;
 	if (trial < 2) {
 		start();
+		startTime = -1;
 		sendCoins();
 		trial++;
 	} else { //All 3 trials done, notify everyone, break socket connections.
@@ -279,6 +281,7 @@ const nextRound = () => {
 		for (let id of all_ids) {
 			io.to(id).emit('getOut');
 		}
+		users = {};
 		trial = 0;
 		game_num++; //TODO server start command argument for game_num
 	}

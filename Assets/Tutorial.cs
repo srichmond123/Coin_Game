@@ -35,7 +35,6 @@ public class Tutorial : MonoBehaviour {
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
 	private static ControllerHelper controllerHelper;
-	private static bool disableVR;
 	public GameObject redWhalePrefab, blueWhalePrefab, boundsPrefab;
 	private static GameObject _redWhalePrefab, _blueWhalePrefab, _boundsPrefab;
 	private static List<GameObject> instances;
@@ -61,7 +60,6 @@ public class Tutorial : MonoBehaviour {
 		HelpText.text = StepTexts[CurrStep];
 		controllerHelper = GetComponentInChildren<ControllerHelper>();
 		controllerHelper.ShowRightTrigger();
-		disableVR = GetComponentInParent<Interface>().disableVR;
 		instances = new List<GameObject>(); //To collect instantiated prefabs and destroy later
 		coinManager = GameObject.Find("I manage coins").GetComponent<CoinManager>();
 		coinPrefab = coinManager.coinPrefab;
@@ -83,7 +81,7 @@ public class Tutorial : MonoBehaviour {
 	// Update is called once per frame
 	void Update() {
 		if (CurrStep < EndStep) {
-			if (!disableVR) {
+			if (!Interface.DisableVr) {
 				//TODO VR controller Tutorial screen change
 			}
 			else {
@@ -118,7 +116,11 @@ public class Tutorial : MonoBehaviour {
 
 	public static void HandleBucketClick(Color col) { //Handle tutorial bucket behavior internally:
 		switch (CurrStep) {
-			case ShowBucketsStep: case TopologyExplanation: case TopologyExample1: case TopologyExample2:{
+			case ShowBucketsStep: 
+			case TopologyExplanation: 
+			case TopologyExample1: 
+			case TopologyExample2:
+			case BoundsExplanation: {
 				NextStep();
 				break;
 			}
@@ -333,14 +335,14 @@ public class Tutorial : MonoBehaviour {
 		"\n\n\n\nAdditionally, this bar will show how close your team is to " + Interface.Goal + " points, " +
 		"as well as each team member's contribution.\n\n" + 
 		"For example, this is what it would look like if your team had <b>5</b> points, " +
-		"you (the <color=green>green</color> player) had contributed 4 points, the <color=blue>blue</color> " +
+		"you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
 		"player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.",
 		
 		"\n\n\n\n\nFinally, the time elapsed since the start of the round will be shown here.\n\n" +
 		"Press your right trigger to learn how to gain points.",
 		
 		"\n\n\n\nYou will collect <color=green>green</color> colored coins.\n" +
-		"Your <color=blue>blue</color> teammate will collect <color=blue>blue</color> coins,\n" +
+		"Your <color=#0099ff>blue</color> teammate will collect <color=#0099ff>blue</color> coins,\n" +
 		"and your <color=red>red</color> teammate will collect <color=red>red</color> coins\n\n" +
 		"(Press your right trigger to continue)",
 		
@@ -359,7 +361,7 @@ public class Tutorial : MonoBehaviour {
 		"\n\n\n\n.You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
 		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
 		
-		"\n\n\n\nNow, try giving this coin to your <color=blue>blue</color> teammate by pressing the trigger " +
+		"\n\n\n\nNow, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing the trigger " +
 		"on your <b>left</b> hand:",
 		
 		"\n\n\n\nTry swimming to the coin in front of you again by pressing and holding A:",
@@ -372,13 +374,13 @@ public class Tutorial : MonoBehaviour {
 		"Each round, one or both of your teammates' buckets might be transparent, meaning that you will be " +
 		"<b>unable</b> to share coins with that player in that round. (Press your right trigger to continue)",
 		
-		"\n\n\n\nFor instance, this is what you would see if you could share with your <color=blue>blue</color> " +
+		"\n\n\n\nFor instance, this is what you would see if you could share with your <color=#0099ff>blue</color> " +
 		"teammate,\nbut <b>not</b> with your <color=red>red</color> teammate." +
 		"\nYou will always be able to share coins with yourself, no matter the round." +
 		"\n\n(Press your right trigger to continue)",
 		
 		"\n\n\n\nThis is what you would see if you could share with your <color=red>red</color> " +
-		"teammate,\n but <b>not</b> with your <color=blue>blue</color> teammate." +
+		"teammate,\n but <b>not</b> with your <color=#0099ff>blue</color> teammate." +
 		"\n\n(Press your right trigger to continue)",
 		
 		"\n\n\n\nSince your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
