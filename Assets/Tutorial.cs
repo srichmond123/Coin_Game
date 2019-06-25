@@ -26,16 +26,18 @@ public class Tutorial : MonoBehaviour {
 		CollectThirdTime = 11,
 		ShareRed = 12,
 		TopologyExplanation = 13,
-		TopologyExample = 14,
+		TopologyExample1 = 14,
+		TopologyExample2 = 15,
+		BoundsExplanation = 16,
 
-		EndStep = 15;
+		EndStep = 17;
 
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
 	private static ControllerHelper controllerHelper;
 	private static bool disableVR;
-	public GameObject redWhalePrefab, blueWhalePrefab;
-	private static GameObject _redWhalePrefab, _blueWhalePrefab; //To instantiate on step 2
+	public GameObject redWhalePrefab, blueWhalePrefab, boundsPrefab;
+	private static GameObject _redWhalePrefab, _blueWhalePrefab, _boundsPrefab;
 	private static List<GameObject> instances;
 	private static GameObject coinPrefab, helpArrow;
 	private static TerrainScript terrainScript;
@@ -66,6 +68,7 @@ public class Tutorial : MonoBehaviour {
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
 		_redWhalePrefab = redWhalePrefab;
 		_blueWhalePrefab = blueWhalePrefab;
+		_boundsPrefab = boundsPrefab;
 		myTransform = transform; //OK since Tutorial.cs isn't going to be instantiated many times
 		helpArrow = GameObject.Find("HelpArrow");
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
@@ -91,7 +94,7 @@ public class Tutorial : MonoBehaviour {
 					BlueRange = Mathf.Max(Interface.MinRange + 10f, BlueRange - decr * Time.deltaTime);
 				}
 
-				if (Input.GetKeyDown(KeyCode.Space)) {
+				if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
 					EndTutorial();
 				}
 			}
@@ -115,7 +118,7 @@ public class Tutorial : MonoBehaviour {
 
 	public static void HandleBucketClick(Color col) { //Handle tutorial bucket behavior internally:
 		switch (CurrStep) {
-			case ShowBucketsStep: {
+			case ShowBucketsStep: case TopologyExplanation: case TopologyExample1: case TopologyExample2:{
 				NextStep();
 				break;
 			}
@@ -143,16 +146,6 @@ public class Tutorial : MonoBehaviour {
 					RedRange += Interface.OtherRangeIncrease;
 					NextStep();
 				}
-				break;
-			}
-
-			case TopologyExplanation: {
-				NextStep();
-				break;
-			}
-
-			case TopologyExample: {
-				NextStep();
 				break;
 			}
 		}
@@ -255,8 +248,14 @@ public class Tutorial : MonoBehaviour {
 				break;
 			}
 
-			case TopologyExample: {
+			case TopologyExample1: case TopologyExample2: {
 				Interface.buckets.Show();
+				break;
+			}
+
+			case BoundsExplanation: {
+				Interface.buckets.Hide();
+				SpawnBoundary();
 				break;
 			}
 			
@@ -288,6 +287,19 @@ public class Tutorial : MonoBehaviour {
 		cn.SetParent(coinManager);
 		cn.SetAlbedo(0f);
 		coinManager.AppendToList(inst);
+		instances.Add(inst);
+	}
+
+	private static void SpawnBoundary() {
+		GameObject inst = Instantiate(_boundsPrefab);
+		Vector3 looking = myTransform.forward;
+		Vector3 position = Interface.GetMyPosition() + looking * 7f;
+		position.y = terrainScript.transform.localPosition.y;
+		Vector3 finalPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
+		inst.transform.localPosition = finalPosition;
+		inst.transform.localScale = new Vector3(700f, 70f, 0.1f);
+		inst.transform.localRotation = Interface.GetMyRotation();
+		Interface.SetTutorialBoundary(finalPosition, looking, myTransform.right);
 		instances.Add(inst);
 	}
 
@@ -365,7 +377,16 @@ public class Tutorial : MonoBehaviour {
 		"\nYou will always be able to share coins with yourself, no matter the round." +
 		"\n\n(Press your right trigger to continue)",
 		
-		//TODO explain cross. Describe 3 trials, how they can quit at any time, etc.
+		"\n\n\n\nThis is what you would see if you could share with your <color=red>red</color> " +
+		"teammate,\n but <b>not</b> with your <color=blue>blue</color> teammate." +
+		"\n\n(Press your right trigger to continue)",
+		
+		"\n\n\n\nSince your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
+		"like what is in front of you. You will not be able to move past it.\n\n(Press your right trigger to continue)",
+		
+		"\n\n\n\nThank you, press right trigger to play",
+		
+		//TODO quit at any time, bounds, previous times of "other players"
 		
 		"END",
 	};
@@ -387,6 +408,7 @@ public class Tutorial : MonoBehaviour {
 		Interface.buckets.HardSet(false);
 		timeCount = -1f;
 		Interface.ToggleLobby(true);
+		Interface.TutorialBoundarySet = false;
 	}
 }
 

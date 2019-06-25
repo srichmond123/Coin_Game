@@ -9,7 +9,7 @@ public class Boundaries : MonoBehaviour {
 	private List<Transform> bounds;
 	private Vector3 origin = Vector3.one * -1000f, scale = Vector3.one * Mathf.Infinity;
 	private TerrainScript terrainScript;
-	private float Buffer => 0.18f; //Collision buffer (so user never goes through red boundaries)
+	public const float Buffer = 0.18f; //Collision buffer (so user never goes through red boundaries)
 	private int NumFish => 18;
 	private int NumFloatingParticles => 7;
 	private int NumBubbles => 30;

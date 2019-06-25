@@ -72,6 +72,10 @@ io.on('connection', (socket) => {
 		users[socket.id] = {};
 		coinCount[socket.id] = {};
 
+		for (let id of Object.keys(users)) {
+			io.to(id).emit('newConnection', {left: GAME_SIZE - Object.keys(users).length});
+		}
+
 		socket.on('update', (data) => {
 			users[socket.id] = data;
 		});

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.UI;
@@ -30,9 +31,9 @@ public class Interface : MonoBehaviour {
 		SpeedDecrement = 4f;
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
-	public static bool MulticolorBar => true;
+	private static bool MulticolorBar => true;
 	static float heightThreshold => 0.8f; //How high user can be above terrain Y
-	public static Vector3 BarOrigin = Vector3.zero;
+	private static Vector3 BarOrigin;
 	
 	//private const int ZeroScoreRight = 347;
 	//private const int MaxScoreRight = -200;
@@ -53,7 +54,7 @@ public class Interface : MonoBehaviour {
 
 	public GameObject arrowOfVirtue;
 	public int _MyCoins, _OtherCoins;
-	public static bool flying = false;
+	private static bool flying = false;
 	private static bool slowingDown = false;
 	private float currBoost = 1f;
 	//private float boostTime = 0f;
@@ -62,22 +63,24 @@ public class Interface : MonoBehaviour {
 	public static Buckets buckets;
 	private float luminosity = 0.2f;
 	public static Light light;
-	public static Transform interfaceTransform;
-	public static TextMeshPro scoreText, timeText;
+	private static Transform interfaceTransform;
+	public static TextMeshPro scoreText, timeText, lobbyText;
 	private static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
 	
 	private static bool InLobby = false;
+	public static bool TutorialBoundarySet = false;
+
+	private static float _boundaryX, _boundaryZ, _boundarySlope;
+	private static bool _boundaryBlockBelowLine;
+	private static LoadingCircle _loadingCircle;
 
 	void Start() {
 		if (disableVR) {
 			XRSettings.LoadDeviceByName("");
 			XRSettings.enabled = false;
-		}
-		else {
-			//
 		}
 		buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
 		friends = new List<Friend>();
@@ -91,10 +94,12 @@ public class Interface : MonoBehaviour {
 		socket.On("update", OnSocketUpdate);
 		socket.On("give", HandleGenerosity);
 		socket.On("getOut", HandleRejection);
+		socket.On("newConnection", HandleNewConnection);
 		light = GameObject.Find("My Light").GetComponent<Light>();
-		interfaceTransform = gameObject.transform;
+		interfaceTransform = transform; //Since there's only one of these this is fine
 		scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshPro>();
 		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
+		lobbyText = GameObject.Find("LobbyText").GetComponent<TextMeshPro>();
 		scoreBar = GameObject.Find("Bar").transform;
 		redBar = GameObject.Find("RedBar").transform;
 		blueBar = GameObject.Find("BlueBar").transform;
@@ -107,12 +112,18 @@ public class Interface : MonoBehaviour {
 
 		scoreText.enabled = false;
 		timeText.enabled = false;
+		lobbyText.enabled = false;
 		buckets.HardSet(false); //Hide for tutorial
+
+		_loadingCircle = GameObject.Find("LoadingCircle").GetComponent<LoadingCircle>();
+		_loadingCircle.Set(false);
 	}
 
 
 	public static void ToggleLobby(bool inLobby) {
 		InLobby = inLobby;
+		lobbyText.enabled = inLobby;
+		_loadingCircle.Set(inLobby);
 	}
 
 	void HandleRejection(SocketIOEvent e) {
@@ -168,6 +179,15 @@ public class Interface : MonoBehaviour {
 		ToggleLobby(false);
 	}
 
+	void HandleNewConnection(SocketIOEvent e) {
+		int numLeft = (int) e.data["left"].f;
+		if (InLobby) {
+			lobbyText.text = "We are waiting for " + 
+                 numLeft + " more " + (numLeft == 1 ? "player" : "players");
+			
+		}
+	}
+
 	void ShowGenerosity(Friend friend) {
 		string to = friend.GetId();
 		if (MyCoinsOwned == 0 || !permissibleIndividuals.Contains(to)) return;
@@ -190,7 +210,7 @@ public class Interface : MonoBehaviour {
 			//TODO Animation of receiving a coin
 		}
 		else {
-			//VirtueSignal(GetFriendById(data["from"]), GetFriendById(data["to"])); //TODO uncomment virtue signaling?
+			//VirtueSignal(GetFriendById(data["from"]), GetFriendById(data["to"]));
 			GetFriendById(data["to"]).OtherCoins++;
 		}
 	}
@@ -362,72 +382,96 @@ public class Interface : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update() {
-		AdjustMyLight();
-		if (!disableVR) {
-			if (OVRInput.GetDown(OVRInput.Button.One)) {
-				//A button pressed, right controller:
-				//Fly(speed * Time.deltaTime);
-				flying = true;
-			}
-			else if (OVRInput.GetUp(OVRInput.Button.One)) {
-				flying = false;
-			}
-
-			if (OVRInput.GetUp(OVRInput.Button.Two)) {
-				//Stop boosting, don't stop flying though
-			}
+		if (InLobby) {
 			
-			if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
-				//Raycast, check tag, call ShowGenerosity
-			}
-		}
-		else {
-			//_displayCoins();
-			if (Input.GetKey(KeyCode.RightArrow)) {
-				transform.localEulerAngles += Vector3.up;
-			}
-			if (Input.GetKey(KeyCode.LeftArrow)) {
-				transform.localEulerAngles -= Vector3.up;
-			} 
-			if (Input.GetKey(KeyCode.UpArrow)) {
-				transform.localEulerAngles += Vector3.left;
-			}
-			if (Input.GetKey(KeyCode.DownArrow)) {
-				transform.localEulerAngles -= Vector3.left;
-			}
+		} else {
+			AdjustMyLight();
+			if (!disableVR) {
+				if (OVRInput.GetDown(OVRInput.Button.One)) {
+					//A button pressed, right controller:
+					//Fly(speed * Time.deltaTime);
+					flying = true;
+				}
+				else if (OVRInput.GetUp(OVRInput.Button.One)) {
+					flying = false;
+				}
 
-			if (Input.GetKey(KeyCode.W)) {
-				flying = true;
+				if (OVRInput.GetUp(OVRInput.Button.Two)) {
+					//Stop boosting, don't stop flying though
+				}
+
+				if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
+					//Raycast, check tag, call ShowGenerosity
+				}
 			}
-			if (Input.GetKeyDown(KeyCode.S)) {
-				if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
-					bool __ = flying ? slowingDown = !slowingDown : flying = true;
+			else {
+				//_displayCoins();
+				if (Input.GetKey(KeyCode.RightArrow)) {
+					transform.localEulerAngles += Vector3.up;
+				}
+
+				if (Input.GetKey(KeyCode.LeftArrow)) {
+					transform.localEulerAngles -= Vector3.up;
+				}
+
+				if (Input.GetKey(KeyCode.UpArrow)) {
+					transform.localEulerAngles += Vector3.left;
+				}
+
+				if (Input.GetKey(KeyCode.DownArrow)) {
+					transform.localEulerAngles -= Vector3.left;
+				}
+
+				if (Input.GetKey(KeyCode.W)) {
+					flying = true;
+				}
+
+				if (Input.GetKeyDown(KeyCode.S)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						bool __ = flying ? slowingDown = !slowingDown : flying = true;
+					}
+				}
+
+				if (Input.GetMouseButtonDown(0)) {
+					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+					RaycastHit hit;
+
+					if (Physics.Raycast(ray, out hit)) {
+						if (hit.transform.tag.Equals("Not Me")) {
+							//ShowGenerosity(hit.transform.GetComponent<Friend>());
+						}
+						else if (hit.transform.tag.Equals("Bucket")) {
+							buckets.HandleClick(hit.transform);
+						}
+					}
+					else {
+						if (Tutorial.InTutorial) {
+							Tutorial.TellClicked();
+						}
+					}
 				}
 			}
 
-			if (Input.GetMouseButtonDown(0)) {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-
-                if (Physics.Raycast(ray, out hit)) {
-                    if (hit.transform.tag.Equals("Not Me")) {
-                        //ShowGenerosity(hit.transform.GetComponent<Friend>());
-                    }
-                    else if (hit.transform.tag.Equals("Bucket")) {
-                        buckets.HandleClick(hit.transform);
-                    }
-                }
-                else {
-	                if (Tutorial.InTutorial) {
-		                Tutorial.TellClicked();
-	                }
-                }
+			if (flying) {
+				Fly();
 			}
 		}
+	}
 
-		if (flying) {
-			Fly();
-		}
+	public static void SetTutorialBoundary(Vector3 center, Vector3 looking, Vector3 right) {
+		//In tutorial, boundary step has been reached, so don't allow flight beyond that boundary
+		//(only in tutorial) - find line in x-z plane they can't cross:
+		//Vector3 me = GetMyPosition();
+		Vector3 looking2D = looking;
+		looking2D.y = 0;
+		looking2D.Normalize();
+		center -= looking2D * (Boundaries.Buffer * 6f);
+		_boundarySlope = right.z / right.x;
+		_boundaryX = center.x;
+		_boundaryZ = center.z;
+		_boundaryBlockBelowLine = looking.z < 0;
+		TutorialBoundarySet = true;
+		//z - z1 = (slope) * (x - x1)
 	}
 	
 	public static void LogMessage(string s) {
@@ -436,7 +480,7 @@ public class Interface : MonoBehaviour {
 		socket.Emit("log", msg);
 	}
 
-	void Fly() {
+	private void Fly() {
 		if (!slowingDown) {
 			if (speed < MaxSpeed) {
 				speed += SpeedIncrement * Time.deltaTime;
@@ -475,9 +519,19 @@ public class Interface : MonoBehaviour {
 		}
 
 		Vector3 currPosition = t.localPosition;
-		Vector3 modPosition = boundaries.Outside(currPosition);
-		if (!currPosition.Equals(modPosition)) {
-			t.localPosition = modPosition;
+		Vector3 modifyPosition = boundaries.Outside(currPosition); //Will modify position if out of bounds
+		if (!currPosition.Equals(modifyPosition)) {
+			t.localPosition = modifyPosition;
+		}
+
+		if (TutorialBoundarySet) {
+			float myX = currPosition.x;
+			float myZ = currPosition.z;
+			float lineZ = _boundarySlope * (myX - _boundaryX) + _boundaryZ;
+			if (_boundaryBlockBelowLine) myZ = Mathf.Max(lineZ, myZ);
+			else myZ = Mathf.Min(lineZ, myZ);
+			currPosition.z = myZ;
+			t.localPosition = currPosition;
 		}
 	}
 

@@ -79,7 +79,10 @@ public class Buckets : MonoBehaviour {
 						*/
 						albedo = 0.1f;
 					}
-				} else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExample) {
+				} else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExample1) {
+					albedo = 0.1f;
+				} 
+				else if (idx == 0 && Tutorial.CurrStep == Tutorial.TopologyExample2) {
 					albedo = 0.1f;
 				}
 
