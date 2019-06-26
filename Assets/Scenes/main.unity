@@ -23911,6 +23911,11 @@ PrefabInstance:
       propertyPath: EnableBody
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114029231360713414, guid: 84c8b8609f9bb434eaf5248f17ff1293,
+        type: 3}
+      propertyPath: LocalAvatarConfig.MaterialPropertyBlock.Colors.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1098047352992398, guid: 84c8b8609f9bb434eaf5248f17ff1293, type: 3}
       propertyPath: m_IsActive
       value: 0
