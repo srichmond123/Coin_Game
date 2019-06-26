@@ -42,10 +42,10 @@ public class Tutorial : MonoBehaviour {
 	private static TerrainScript terrainScript;
 	private static CoinManager coinManager;
 	private static Transform myTransform;
-	
-	private static Vector3 arrowPositionScoreText => new Vector3(0.089f, 0.143f, 0.258f);
-	private static Vector3 arrowPositionScoreBar => new Vector3(0.09f, 0.17f, 0.26f);
-	private static Vector3 arrowPositionTimer => new Vector3(0.089f, 0.086f, 0.254f);
+
+	private static Vector3 arrowPositionScoreText => new Vector3(0.515f, 0.783f, 0.563f);
+	private static Vector3 arrowPositionScoreBar => new Vector3(0.602f, 0.855f, 0.563f);
+	private static Vector3 arrowPositionTimer => new Vector3(0.529f, 0.475f, 0.563f);
 	private static float arrowXRotationScoreText => 0f;
 	private static float arrowXRotationScoreBar => -45f;
 	private static float arrowXRotationTimer => arrowXRotationScoreText;
@@ -81,21 +81,16 @@ public class Tutorial : MonoBehaviour {
 	// Update is called once per frame
 	void Update() {
 		if (CurrStep < EndStep) {
-			if (!Interface.DisableVr) {
-				//TODO VR controller Tutorial screen change
-			}
-			else {
-				if (CurrStep >= ShowBucketsStep) {
-					float decr = CurrStep == ShowBucketsStep ? 5f : Interface.ConstDecrease;
-					Interface.light.range = Mathf.Max(Interface.MinRange + 10f, Interface.light.range - decr * Time.deltaTime);
-					RedRange = Mathf.Max(Interface.MinRange + 10f, RedRange - decr * Time.deltaTime);
-					BlueRange = Mathf.Max(Interface.MinRange + 10f, BlueRange - decr * Time.deltaTime);
-				}
+            if (CurrStep >= ShowBucketsStep) {
+                float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
+                Interface.light.range = Mathf.Max(Interface.MinRange + 20f, Interface.light.range - decr * Time.deltaTime);
+                RedRange = Mathf.Max(Interface.MinRange + 20f, RedRange - decr * Time.deltaTime);
+                BlueRange = Mathf.Max(Interface.MinRange + 20f, BlueRange - decr * Time.deltaTime);
+            }
 
-				if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
-					EndTutorial();
-				}
-			}
+            if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
+                EndTutorial();
+            }
 
 			if (timeCount >= 0f) {
 				timeCount += Time.deltaTime;
@@ -278,8 +273,8 @@ public class Tutorial : MonoBehaviour {
 	
 	private static void SpawnCoin(Color col, float offset) {
 		GameObject inst = Instantiate(coinPrefab);
-		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 4.5f + myTransform.right * offset;
-		position.y = terrainScript.transform.localPosition.y + 4.2f;
+		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 8.5f + myTransform.right * offset;
+		position.y = terrainScript.transform.localPosition.y + 7.2f;
 		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
 		inst.GetComponent<Collider>().enabled = true;
@@ -307,16 +302,16 @@ public class Tutorial : MonoBehaviour {
 
 	private static void SpawnWhales() {
 		GameObject redInst = Instantiate(_redWhalePrefab);
-		Vector3 forwardVec = myTransform.forward;
-		forwardVec.y = 0; //eye level
+		Vector3 forwardVec = Interface.GetMyForward();
+		forwardVec.y = 0.4f; //eye level
 		redInst.transform.localPosition = Interface.GetMyPosition() + forwardVec * 5f + 2.5f * myTransform.right;
 		redInst.transform.localRotation = Interface.GetMyRotation();
-		redInst.transform.Rotate(Vector3.up, 45f);
+		redInst.transform.Rotate(Vector3.up, 180f + 45f);
 		instances.Add(redInst);
 		GameObject blueInst = Instantiate(_blueWhalePrefab);
 		blueInst.transform.localPosition = redInst.transform.localPosition + -5f * myTransform.right;
 		blueInst.transform.localRotation = Interface.GetMyRotation();
-		blueInst.transform.Rotate(Vector3.up, -45f);
+		blueInst.transform.Rotate(Vector3.up, 180f - 45f);
 		instances.Add(blueInst);
 	}
 	
@@ -358,7 +353,7 @@ public class Tutorial : MonoBehaviour {
 		"or to one of your teammates. Whoever you give it to will receive a boost in their visibility.\n\n" +
 		"Try to give it to yourself by pressing B on your right controller:",
 		
-		"\n\n\n\n.You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
+		"\n\n\n\nYou and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
 		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
 		
 		"\n\n\n\nNow, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing the trigger " +

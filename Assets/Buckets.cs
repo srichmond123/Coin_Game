@@ -152,8 +152,9 @@ public class Buckets : MonoBehaviour {
 		return a.r.Equals(b.r) && a.g.Equals(b.g) && a.b.Equals(b.b);
 	}
 
-	public void HandleClick(Transform t) {
-		Color c = GetBucketColor(t);
+	public void HandleClick(Color c) {
+		//Color c = GetBucketColor(t);
+		
 		
 		if (coins > 0) {
 			if (!Tutorial.InTutorial) {

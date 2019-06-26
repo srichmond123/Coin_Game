@@ -38,7 +38,7 @@ public class Coin : MonoBehaviour {
 
 	private void OnTriggerStay(Collider other) {
 		if (!collided) {
-			if (other.gameObject.tag.Equals("Me") 
+			if (other.gameObject.tag.Equals("MainCamera") 
 				&& Interface.MyId == id
 				&& Interface.buckets.GetCoinsHeld() < 1) {
 				parent.Collect(index);

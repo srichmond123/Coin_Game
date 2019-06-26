@@ -41,7 +41,7 @@ public class Interface : MonoBehaviour {
 	//private const int MaxScoreRight = -200;
 	private const float MaxScale = 0.18f;
 
-	public static bool DisableVr = true;
+	public static bool DisableVr = false;
 
 	private float speed = 4f;
 	public static SocketIOComponent socket;
@@ -54,6 +54,7 @@ public class Interface : MonoBehaviour {
 	public static int MyScore = 0; //Score is directly related to bumping into a coin, doesn't have to do with sharing.
 	private static Vector3 MapScale, MapOrigin;
 
+	private Transform blueBucketTransform, greenBucketTransform, redBucketTransform;
 	public GameObject arrowOfVirtue;
 	public int _MyCoins, _OtherCoins;
 	private static bool flying = false;
@@ -125,6 +126,10 @@ public class Interface : MonoBehaviour {
 		_loadingCircle = GameObject.Find("LoadingCircle").GetComponent<LoadingCircle>();
 		_loadingCircle.Set(false);
 		countdownText.enabled = false;
+
+		blueBucketTransform = GameObject.Find("bucket").transform;
+		greenBucketTransform = GameObject.Find("bucket (1)").transform;
+		redBucketTransform = GameObject.Find("bucket (2)").transform;
 	}
 
 
@@ -422,22 +427,30 @@ public class Interface : MonoBehaviour {
 		} else {
 			AdjustMyLight();
 			if (!DisableVr) {
-				if (OVRInput.GetDown(OVRInput.Button.One)) {
+				if (OVRInput.GetDown(OVRInput.RawButton.A)) {
 					//A button pressed, right controller:
 					//Fly(speed * Time.deltaTime);
-					flying = true;
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						bool __ = flying ? slowingDown = !slowingDown : flying = true;
+					}
 				}
-				else if (OVRInput.GetUp(OVRInput.Button.One)) {
-					flying = false;
+				else if (OVRInput.GetUp(OVRInput.RawButton.A)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						slowingDown = true;
+					}
 				}
 
-				if (OVRInput.GetUp(OVRInput.Button.Two)) {
-					//Stop boosting, don't stop flying though
+				if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep <= Tutorial.ShowBucketsStep) {
+						Tutorial.TellClicked();
+					}
+					else {
+						buckets.HandleClick(Color.red);
+					}
 				}
-
-				if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
-					//Raycast, check tag, call ShowGenerosity
-				}
+				else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
+				else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) buckets.HandleClick(Color.blue);
 			}
 			else {
 				//_displayCoins();
@@ -476,7 +489,7 @@ public class Interface : MonoBehaviour {
 							//ShowGenerosity(hit.transform.GetComponent<Friend>());
 						}
 						else if (hit.transform.tag.Equals("Bucket")) {
-							buckets.HandleClick(hit.transform);
+							//buckets.HandleClick(hit.transform);
 						}
 					}
 					else {
@@ -500,7 +513,7 @@ public class Interface : MonoBehaviour {
 		Vector3 looking2D = looking;
 		looking2D.y = 0;
 		looking2D.Normalize();
-		center -= looking2D * (Boundaries.Buffer * 6f);
+		center -= looking2D * Boundaries.Buffer;
 		_boundarySlope = right.z / right.x;
 		_boundaryX = center.x;
 		_boundaryZ = center.z;
@@ -575,5 +588,9 @@ public class Interface : MonoBehaviour {
 			return _centerEyeTransform.localRotation;
 		}
 		return _interfaceTransform.localRotation;
+	}
+
+	public static Vector3 GetMyForward() {
+		return _centerEyeTransform.forward;
 	}
 }
