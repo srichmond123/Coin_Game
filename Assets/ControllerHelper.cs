@@ -14,9 +14,10 @@ public class ControllerHelper : MonoBehaviour {
 	private Quaternion showRightTriggerMeshRotation
 		=> Quaternion.Euler(new Vector3(0.183f, -89.899f, 33.52f));
 	private Vector3 showRightTriggerCirclePosition
-		=> new Vector3(0.2034f, -1.5976f, 1.5155f);
+		=> new Vector3(0.1966f, -1.6071f, 1.5196f);
+
 	private Vector3 showLeftTriggerCirclePosition
-		=> new Vector3(0.24f, -1.5975f, 1.51f);
+		=> new Vector3(0.2401f, -1.6071f, 1.5196f);
 	private Vector3 showRightTriggerCircleScale
 		=> new Vector3(0.005000009f, 0.005000006f, 0.005000009f);
 

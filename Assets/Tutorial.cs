@@ -29,8 +29,9 @@ public class Tutorial : MonoBehaviour {
 		TopologyExample1 = 14,
 		TopologyExample2 = 15,
 		BoundsExplanation = 16,
+		LeaderboardExplanation = 17,
 
-		EndStep = 17;
+		EndStep = 18;
 
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
@@ -83,9 +84,9 @@ public class Tutorial : MonoBehaviour {
 		if (CurrStep < EndStep) {
             if (CurrStep >= ShowBucketsStep) {
                 float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
-                Interface.light.range = Mathf.Max(Interface.MinRange + 20f, Interface.light.range - decr * Time.deltaTime);
-                RedRange = Mathf.Max(Interface.MinRange + 20f, RedRange - decr * Time.deltaTime);
-                BlueRange = Mathf.Max(Interface.MinRange + 20f, BlueRange - decr * Time.deltaTime);
+                Interface.light.range = Mathf.Max(Interface.MinRange + 25f, Interface.light.range - decr * Time.deltaTime);
+                RedRange = Mathf.Max(Interface.MinRange + 25f, RedRange - decr * Time.deltaTime);
+                BlueRange = Mathf.Max(Interface.MinRange + 25f, BlueRange - decr * Time.deltaTime);
             }
 
             if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
@@ -115,7 +116,8 @@ public class Tutorial : MonoBehaviour {
 			case TopologyExplanation: 
 			case TopologyExample1: 
 			case TopologyExample2:
-			case BoundsExplanation: {
+			case BoundsExplanation:
+			case LeaderboardExplanation: {
 				NextStep();
 				break;
 			}
@@ -255,6 +257,11 @@ public class Tutorial : MonoBehaviour {
 				SpawnBoundary();
 				break;
 			}
+
+			case LeaderboardExplanation: {
+				Interface.LeaderBoard.enabled = true;
+				break;
+			}
 			
 			case EndStep: {
 				EndTutorial();
@@ -273,7 +280,7 @@ public class Tutorial : MonoBehaviour {
 	
 	private static void SpawnCoin(Color col, float offset) {
 		GameObject inst = Instantiate(coinPrefab);
-		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 8.5f + myTransform.right * offset;
+		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 6.0f + myTransform.right * offset;
 		position.y = terrainScript.transform.localPosition.y + 7.2f;
 		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
@@ -381,9 +388,12 @@ public class Tutorial : MonoBehaviour {
 		"\n\n\n\nSince your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
 		"like what is in front of you. You will not be able to move past it.\n\n(Press your right trigger to continue)",
 		
-		"\n\n\n\nThank you, press right trigger to play",
+		"\n\n\n\nLastly, the top 3 scores of all previous teams in any round are shown in front.\n" +
+		"This panel will be visible throughout gameplay.\n" +
+		"(Press your right trigger to continue)",
 		
-		//TODO quit at any time, bounds, previous times of "other players"
+		"\n\n\n\nYou are now ready to play.\nYou may quit playing any time you wish." +
+		"\nIf you have no further questions, press your right trigger to begin.",
 		
 		"END",
 	};
@@ -391,6 +401,7 @@ public class Tutorial : MonoBehaviour {
 	private static void EndTutorial() {
 		DestroyAllInstances();
 		CurrStep = EndStep;
+		Interface.LeaderBoard.enabled = true;
 		Interface.socket.enabled = true;
 		Interface.scoreText.enabled = true;
 		Interface.timeText.enabled = true;

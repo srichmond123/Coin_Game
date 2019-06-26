@@ -22,8 +22,8 @@ public class Interface : MonoBehaviour {
 	public const float 
 		MinRange = 15f,
 		MaxRange = 200f,
-		OwnRangeIncrease = 32f, 
-		OtherRangeIncrease = 32f, 
+		OwnRangeIncrease = 22f, 
+		OtherRangeIncrease = 22f, 
 		ConstDecrease = 2.0f, 
 		InitialRange = 80f, 
 		MaxSpeed = 4f, 
@@ -34,14 +34,14 @@ public class Interface : MonoBehaviour {
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
-	static float heightThreshold => 0.8f; //How high user can be above terrain Y
+	private const float HeightThreshold = 0.8f; //How high user can be above terrain Y
 	private static Vector3 BarOrigin;
 	
 	//private const int ZeroScoreRight = 347;
 	//private const int MaxScoreRight = -200;
 	private const float MaxScale = 0.18f;
 
-	public static bool DisableVr = false;
+	public static bool DisableVr = true;
 
 	private float speed = 4f;
 	public static SocketIOComponent socket;
@@ -82,6 +82,7 @@ public class Interface : MonoBehaviour {
 	private static LoadingCircle _loadingCircle;
 	private static int RoundNum = 0; //1, 2, or 3 for simplicity - Socket start emission will incr. this to 1 at first
 	private static string PrevRoundScoreText = "";
+	public static MeshRenderer LeaderBoard;
 
 	private void Start() {
 		if (DisableVr) {
@@ -113,6 +114,8 @@ public class Interface : MonoBehaviour {
 		blueBar = GameObject.Find("BlueBar").transform;
 		greenBar = GameObject.Find("GreenBar").transform;
 		emptyBar = GameObject.Find("EmptyBar").transform;
+		LeaderBoard = GameObject.Find("LeaderBoard").GetComponent<MeshRenderer>();
+		LeaderBoard.enabled = false;
 		BarOrigin = greenBar.localPosition;
 		
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
@@ -161,7 +164,7 @@ public class Interface : MonoBehaviour {
 		myPos.y =
 			terrainScript.GetHeightAt(myPos)
 			+ terrainScript.transform.localPosition.y
-			+ heightThreshold + 0.1f;
+			+ HeightThreshold + 0.1f;
 		transform.localPosition = myPos;
 		JSONObject topologyArray = e.data["topology"][MyId];
 		Goal = (int) e.data["goal"].n;
@@ -333,7 +336,7 @@ public class Interface : MonoBehaviour {
 		_elapsedMs = (int) e.data["time"].f;
 		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
         if (_inCountdown) {
-            int remainder = (int) Mathf.Round((CountdownTimeMs - _elapsedMs) / 1000f);
+            int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
             string text = "Round " + RoundNum + " starts in " + remainder 
                           + (remainder == 1 ? " second" : " seconds");
             
@@ -479,7 +482,7 @@ public class Interface : MonoBehaviour {
 						bool __ = flying ? slowingDown = !slowingDown : flying = true;
 					}
 				}
-
+				/*
 				if (Input.GetMouseButtonDown(0)) {
 					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 					RaycastHit hit;
@@ -498,6 +501,17 @@ public class Interface : MonoBehaviour {
 						}
 					}
 				}
+				*/
+				if (Input.GetKeyDown(KeyCode.E)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep <= Tutorial.ShowBucketsStep) {
+						Tutorial.TellClicked();
+					}
+					else {
+						buckets.HandleClick(Color.red);
+					}
+				}
+				else if (Input.GetKeyDown(KeyCode.W)) buckets.HandleClick(Color.green);
+				else if (Input.GetKeyDown(KeyCode.Q)) buckets.HandleClick(Color.blue);
 			}
 
 			if (flying) {
@@ -552,12 +566,12 @@ public class Interface : MonoBehaviour {
 		Vector3 terrainWorldPosition = terrainScript.transform.localPosition;
 		if (localPosition.y 
 			<= terrainScript.GetHeightAt(localPosition) 
-			+ terrainWorldPosition.y + heightThreshold) {
+			+ terrainWorldPosition.y + HeightThreshold) {
 			//Colliding with terrain, so forward vec must be clamped
 			//(minimum of vec orthogonal to terrain and curr vec, assuming they might be moving away
 			//and we don't want to lock their position):
 			float nextY = terrainScript.GetHeightAt(t.localPosition + forward * incr) 
-						  + terrainWorldPosition.y + heightThreshold;
+						  + terrainWorldPosition.y + HeightThreshold;
 			Vector3 nextPos = localPosition + forward * incr;
 			nextPos.y = Mathf.Max(nextY, nextPos.y);
 			t.localPosition = nextPos;
