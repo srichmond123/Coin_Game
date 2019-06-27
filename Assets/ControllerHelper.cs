@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 
+[Obsolete("This class is obsolete - it's for having a floating controller mesh show what to press." +
+          " I'm now showing it directly on the LocalAvatar hands")]
 public class ControllerHelper : MonoBehaviour {
 	// Start is called before the first frame update
 	private Transform controllerMesh, circle;

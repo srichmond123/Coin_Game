@@ -20,7 +20,7 @@ public class Interface : MonoBehaviour {
 	public static Color NullColor => Color.magenta;
 
 	public const float 
-		MinRange = 15f,
+		MinRange = 25f,
 		MaxRange = 200f,
 		OwnRangeIncrease = 22f, 
 		OtherRangeIncrease = 22f, 
@@ -55,7 +55,7 @@ public class Interface : MonoBehaviour {
 	private static Vector3 MapScale, MapOrigin;
 
 	private Transform blueBucketTransform, greenBucketTransform, redBucketTransform;
-	public GameObject arrowOfVirtue;
+	//public GameObject arrowOfVirtue;
 	public int _MyCoins, _OtherCoins;
 	private static bool flying = false;
 	private static bool slowingDown = false;
@@ -68,7 +68,7 @@ public class Interface : MonoBehaviour {
 	public static Light light;
 	private static Transform _interfaceTransform, _centerEyeTransform;
 	public static TextMeshPro scoreText, timeText, lobbyText, countdownText;
-	private static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
+	public static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
 	private Boundaries boundaries;
@@ -252,7 +252,7 @@ public class Interface : MonoBehaviour {
 	private void VirtueSignal(Friend from, Friend to) {
 		Vector3 fromVec = from.transform.localPosition;
 		Vector3 toVec = to.transform.localPosition;
-		GameObject inst = Instantiate(arrowOfVirtue); 
+		GameObject inst = new GameObject(); //GameObject inst = Instantiate(arrowOfVirtue); 
 		inst.transform.LookAt(toVec - fromVec);
 		Vector3 currScale = inst.transform.localScale;
 		currScale.z = Vector3.Distance(fromVec, toVec) - to.transform.localScale.x * 1.5f; // Width of player objects
@@ -473,16 +473,12 @@ public class Interface : MonoBehaviour {
 					transform.localEulerAngles -= Vector3.left;
 				}
 
-				if (Input.GetKey(KeyCode.W)) {
-					flying = true;
-				}
-
 				if (Input.GetKeyDown(KeyCode.S)) {
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
 						bool __ = flying ? slowingDown = !slowingDown : flying = true;
 					}
 				}
-				/*
+				/* //Old system for clicking on the buckets directly
 				if (Input.GetMouseButtonDown(0)) {
 					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 					RaycastHit hit;
@@ -523,7 +519,6 @@ public class Interface : MonoBehaviour {
 	public static void SetTutorialBoundary(Vector3 center, Vector3 looking, Vector3 right) {
 		//In tutorial, boundary step has been reached, so don't allow flight beyond that boundary
 		//(only in tutorial) - find line in x-z plane they can't cross:
-		//Vector3 me = GetMyPosition();
 		Vector3 looking2D = looking;
 		looking2D.y = 0;
 		looking2D.Normalize();

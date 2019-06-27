@@ -25,7 +25,7 @@ public class CoinManager : MonoBehaviour {
 		socket.On("newCoin", HandleNewCoin);
 	}
 
-	[Obsolete("Only use in tutorial")]
+	[Obsolete("Only use this method in the tutorial")]
 	public void AppendToList(GameObject coin) {
 		coin.GetComponent<Coin>().index = coins.Count;
 		coins.Add(coin);
@@ -59,15 +59,20 @@ public class CoinManager : MonoBehaviour {
 		Interface.UpdateScore();
 	}
 
+
+	public void _destroyAll() {
+		foreach (GameObject o in coins) {
+			Destroy(o);
+		}
+		coins.Clear();
+	}
+
 	void HandleCoins(SocketIOEvent e) {
 		/*
 		 * Instantiate each, assign each Coin object
 		 * an id (it will handle color internally)
 		 */
-		foreach (GameObject o in coins) {
-			Destroy(o);
-		}
-		coins.Clear(); // Could be 2nd or 3rd round
+		_destroyAll();
 		foreach (string id in e.data.keys) {
 			Color c = Interface.NullColor;
 			if (!id.Equals(Interface.MyId)) {

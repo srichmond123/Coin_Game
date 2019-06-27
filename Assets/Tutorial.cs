@@ -16,26 +16,27 @@ public class Tutorial : MonoBehaviour {
 		ShowFriendsStep = 1,
 		ShowScoreTextStep = 2,
 		ShowScoreBarStep = 3,
-		ShowTimerStep = 4,
-		ShowCoinRulesStep = 5,
-		ShowCoinsStep = 6,
-		ShowBucketsStep = 7,
-		TryBucketsStep = 8,
-		CollectSecondTime = 9,
-		ShareBlue = 10,
-		CollectThirdTime = 11,
-		ShareRed = 12,
-		TopologyExplanation = 13,
-		TopologyExample1 = 14,
-		TopologyExample2 = 15,
-		BoundsExplanation = 16,
-		LeaderboardExplanation = 17,
-
-		EndStep = 18;
+		ExplainScoreBarStep = 4,
+		ShowTimerStep = 5,
+		ShowCoinRulesStep = 6,
+		ShowCoinsStep = 7,
+		ShowBucketsStep = 8,
+		TryBucketsStep = 9,
+		CollectSecondTime = 10,
+		ShareBlue = 11,
+		CollectThirdTime = 12,
+		ShareRed = 13,
+		TopologyExplanation = 14,
+		TopologyExample1 = 15,
+		TopologyExample2 = 16,
+		BoundsExplanation = 17,
+		LeaderboardExplanation = 18,
+		EndStep = 19;
 
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
-	private static ControllerHelper controllerHelper;
+	//private static ControllerHelper controllerHelper;
+
 	public GameObject redWhalePrefab, blueWhalePrefab, boundsPrefab;
 	private static GameObject _redWhalePrefab, _blueWhalePrefab, _boundsPrefab;
 	private static List<GameObject> instances;
@@ -51,6 +52,18 @@ public class Tutorial : MonoBehaviour {
 	private static float arrowXRotationScoreBar => -45f;
 	private static float arrowXRotationTimer => arrowXRotationScoreText;
 
+	private static GameObject
+		RightTriggerArrow,
+		RightTriggerHighlight,
+		LeftTriggerArrow,
+		LeftTriggerHighlight,
+		AArrow,
+		BArrow,
+		BHighlight; /*
+					 * 3 buttons (left trig, right trig, B) for giving coins will be color-highlighted.
+		             * The fly button (A) just needs an arrow
+		             */
+
 	public static int MyScore = 0, RedScore = 0, BlueScore = 0;
 	private static float RedRange = 100f;
 	private static float BlueRange = 60f;
@@ -59,8 +72,10 @@ public class Tutorial : MonoBehaviour {
 	void Start() {
 		HelpText = GetComponentInChildren<TextMeshPro>();
 		HelpText.text = StepTexts[CurrStep];
-		controllerHelper = GetComponentInChildren<ControllerHelper>();
-		controllerHelper.ShowRightTrigger();
+		
+		//controllerHelper = GetComponentInChildren<ControllerHelper>();
+		//controllerHelper.ShowRightTrigger();
+		
 		instances = new List<GameObject>(); //To collect instantiated prefabs and destroy later
 		coinManager = GameObject.Find("I manage coins").GetComponent<CoinManager>();
 		coinPrefab = coinManager.coinPrefab;
@@ -71,6 +86,45 @@ public class Tutorial : MonoBehaviour {
 		myTransform = transform; //OK since Tutorial.cs isn't going to be instantiated many times
 		helpArrow = GameObject.Find("HelpArrow");
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
+
+		GameObject rightAnchor = GameObject.Find("RightHandAnchor/RightControllerAnchor");
+		GameObject leftAnchor = GameObject.Find("LeftHandAnchor/LeftControllerAnchor");
+		foreach (Transform child in rightAnchor.transform) {
+			switch (child.name) {
+				case "BButtonHighlight":
+					BHighlight = child.gameObject;
+					BHighlight.SetActive(false);
+					break;
+				case "BButtonArrow":
+					BArrow = child.gameObject;
+					BArrow.SetActive(false);
+					break;
+				case "RightTriggerHighlight":
+					RightTriggerHighlight = child.gameObject;
+					RightTriggerHighlight.SetActive(false);
+					break;
+				case "RightTriggerArrow":
+					RightTriggerArrow = child.gameObject;
+					break;
+				case "AButtonArrow":
+					AArrow = child.gameObject;
+					AArrow.SetActive(false);
+					break;
+			}
+		}
+
+		foreach (Transform child in leftAnchor.transform) {
+			switch (child.name) {
+				case "LeftTriggerHighlight":
+					LeftTriggerHighlight = child.gameObject;
+					LeftTriggerHighlight.SetActive(false);
+					break;
+				case "LeftTriggerArrow":
+					LeftTriggerArrow = child.gameObject;
+					LeftTriggerArrow.SetActive(false);
+					break;
+			}
+		}
 	}
 
 	public static void TellClicked() {
@@ -81,16 +135,20 @@ public class Tutorial : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update() {
-		if (CurrStep < EndStep) {
+		if (InTutorial && CurrStep < EndStep) {
             if (CurrStep >= ShowBucketsStep) {
                 float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
-                Interface.light.range = Mathf.Max(Interface.MinRange + 25f, Interface.light.range - decr * Time.deltaTime);
-                RedRange = Mathf.Max(Interface.MinRange + 25f, RedRange - decr * Time.deltaTime);
-                BlueRange = Mathf.Max(Interface.MinRange + 25f, BlueRange - decr * Time.deltaTime);
+                Interface.light.range = Mathf.Max(Interface.MinRange + 35f, Interface.light.range - decr * Time.deltaTime);
+                RedRange = Mathf.Max(Interface.MinRange + 35f, RedRange - decr * Time.deltaTime);
+                BlueRange = Mathf.Max(Interface.MinRange + 35f, BlueRange - decr * Time.deltaTime);
             }
 
             if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
                 EndTutorial();
+            }
+            
+            if (Input.GetKeyDown(KeyCode.R)){
+	            StartOver();
             }
 
 			if (timeCount >= 0f) {
@@ -117,7 +175,8 @@ public class Tutorial : MonoBehaviour {
 			case TopologyExample1: 
 			case TopologyExample2:
 			case BoundsExplanation:
-			case LeaderboardExplanation: {
+			case LeaderboardExplanation:
+			case EndStep: {
 				NextStep();
 				break;
 			}
@@ -154,6 +213,32 @@ public class Tutorial : MonoBehaviour {
 		return Buckets.CompareRGB(c, Color.blue) ? BlueRange / 50f : RedRange / 50f;
 	}
 
+	private static void StartOver() {
+		DestroyAllInstances();
+		Interface.light.range = Interface.InitialRange;
+		coinManager._destroyAll();
+		RightTriggerArrow.SetActive(true);
+		RightTriggerHighlight.SetActive(false);
+		LeftTriggerArrow.SetActive(false);
+		LeftTriggerHighlight.SetActive(false);
+		AArrow.SetActive(false);
+		BArrow.SetActive(false);
+		BHighlight.SetActive(false);
+		Interface.scoreText.enabled = false;
+		Interface.timeText.enabled = false;
+		MyScore = RedScore = BlueScore = 0;
+		Vector3 flatX = new Vector3(0f, 1f, 1f); //To easily flatten score bars on X (scale) axis
+		Interface.emptyBar.localScale.Scale(flatX);
+		Interface.greenBar.localScale.Scale(flatX);
+		Interface.redBar.localScale.Scale(flatX);
+		Interface.blueBar.localScale.Scale(flatX);
+		helpArrow.GetComponent<MeshRenderer>().enabled = false;
+		Interface.buckets.HardSet(false);
+		Interface.buckets.Hide();
+		CurrStep = 0;
+		HelpText.text = StepTexts[CurrStep];
+	}
+	
 	public static void NextStep() {
 		HelpText.text = StepTexts[++CurrStep];
 		switch (CurrStep) {
@@ -166,17 +251,22 @@ public class Tutorial : MonoBehaviour {
 				Interface.scoreText.enabled = true;
 				helpArrow.GetComponent<MeshRenderer>().enabled = true;
 				SetArrowPositionAndRotation(arrowPositionScoreText, arrowXRotationScoreText);
-				controllerHelper.SetVisible(false);
 				DestroyAllInstances();
 				break;
 			}
 
 			case ShowScoreBarStep: {
+				MyScore = BlueScore = RedScore = 0;
+				Interface.UpdateScore();
+				SetArrowPositionAndRotation(arrowPositionScoreBar, arrowXRotationScoreBar);
+				break;
+			}
+
+			case ExplainScoreBarStep: {
 				MyScore = 4;
 				BlueScore = 1;
 				RedScore = 0;
 				Interface.UpdateScore();
-				SetArrowPositionAndRotation(arrowPositionScoreBar, arrowXRotationScoreBar);
 				break;
 			}
 
@@ -198,25 +288,30 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case ShowCoinsStep: {
-				controllerHelper.ShowAButton();
+				RightTriggerArrow.SetActive(false);
+				AArrow.SetActive(true);
 				break;
 			}
 
 			case ShowBucketsStep: {
 				MyScore = 1;
-				controllerHelper.SetVisible(false);
+				AArrow.SetActive(false);
+				RightTriggerArrow.SetActive(true);
 				Interface.buckets.HardSet(true);
 				Interface.UpdateScore();
 				break;
 			}
 
 			case TryBucketsStep: {
-				controllerHelper.ShowBButton();
+				RightTriggerArrow.SetActive(false);
+				BHighlight.SetActive(true);
+				BArrow.SetActive(true);
 				break;
 			}
 
 			case CollectSecondTime: {
-				controllerHelper.ShowAButton();
+				BArrow.SetActive(false);
+				AArrow.SetActive(true);
 				SpawnCoin(Color.green, offset: 0f);
 				SpawnCoin(Color.blue, offset: 3f);
 				break;
@@ -224,26 +319,30 @@ public class Tutorial : MonoBehaviour {
 
 			case ShareBlue: {
 				MyScore = 2;
-				controllerHelper.ShowLeftTrigger();
+				AArrow.SetActive(false);
+				LeftTriggerArrow.SetActive(true);
+				LeftTriggerHighlight.SetActive(true);
 				Interface.UpdateScore();
 				break;
 			}
 
 			case CollectThirdTime: {
-				controllerHelper.ShowAButton();
+				LeftTriggerArrow.SetActive(false);
+				AArrow.SetActive(true);
 				SpawnCoin(Color.green, offset: -1f);
 				break;
 			}
 
 			case ShareRed: {
 				MyScore = 3;
-				controllerHelper.ShowRightTrigger();
+				RightTriggerArrow.SetActive(true);
+				RightTriggerHighlight.SetActive(true);
+				AArrow.SetActive(false);
 				Interface.UpdateScore();
 				break;
 			}
 
 			case TopologyExplanation: {
-				controllerHelper.SetVisible(false);
 				break;
 			}
 
@@ -264,6 +363,11 @@ public class Tutorial : MonoBehaviour {
 			}
 			
 			case EndStep: {
+				DestroyAllInstances();
+				break;
+			}
+
+			case EndStep + 1: {
 				EndTutorial();
 				break;
 			}
@@ -330,70 +434,71 @@ public class Tutorial : MonoBehaviour {
 		"After completing this tutorial, you will be connected with two players (shown ahead):\n\n" +
 		"(Press your right trigger to continue)",
 		
-		"\n\n\n\nYour goal is to gain " + Interface.Goal + " points as fast as possible each round, for three rounds.\n\n" +
+		"Your goal is to gain " + Interface.Goal + " points as fast as possible each round, for three rounds.\n\n" +
 		"Above, your team's total points out of " + Interface.Goal + " will be shown.\n\n" +
 		"(Press your right trigger to continue)",
 		
-		"\n\n\n\nAdditionally, this bar will show how close your team is to " + Interface.Goal + " points, " +
-		"as well as each team member's contribution.\n\n" + 
+		"Additionally, this bar will show how close your team is to " + Interface.Goal + " points, " +
+		"as well as each team member's contribution.\n\n",  
+		
 		"For example, this is what it would look like if your team had <b>5</b> points, " +
 		"you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
 		"player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.",
 		
-		"\n\n\n\n\nFinally, the time elapsed since the start of the round will be shown here.\n\n" +
+		"\nFinally, the time elapsed since the start of the round will be shown here.\n\n" +
 		"Press your right trigger to learn how to gain points.",
 		
-		"\n\n\n\nYou will collect <color=green>green</color> colored coins.\n" +
+		"You will collect <color=green>green</color> colored coins.\n" +
 		"Your <color=#0099ff>blue</color> teammate will collect <color=#0099ff>blue</color> coins,\n" +
 		"and your <color=red>red</color> teammate will collect <color=red>red</color> coins\n\n" +
 		"(Press your right trigger to continue)",
 		
-		"\n\n\n\nSome coins are available in front of you. Try to swim to the <color=green>green</color> coin " +
+		"Some coins are available in front of you. Try to swim to the <color=green>green</color> coin " +
 		"by pressing and holding the A button on your controller:",
 		
-		"\n\n\n\nYou may notice your visibility decreasing.\n" +
+		"You may notice your visibility decreasing.\n" +
 		"Throughout gameplay, you and your teammates will <b>continuously</b> lose visibility.\n\n" +
 		"After collecting a coin, you will be shown 3 buckets.\n" +
 		"\n(Press your right trigger to continue)",
 		
-		"\n\n\n\nYou will have the option to give the coin to either yourself (<color=green>green</color> bucket), " +
+		"You will have the option to give the coin to either yourself (<color=green>green</color> bucket), " +
 		"or to one of your teammates. Whoever you give it to will receive a boost in their visibility.\n\n" +
 		"Try to give it to yourself by pressing B on your right controller:",
 		
-		"\n\n\n\nYou and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
+		"You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
 		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
 		
-		"\n\n\n\nNow, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing the trigger " +
+		"Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing the trigger " +
 		"on your <b>left</b> hand:",
 		
-		"\n\n\n\nTry swimming to the coin in front of you again by pressing and holding A:",
+		"Try swimming to the coin in front of you again by pressing and holding A:",
 		
-		"\n\n\n\nNow, try to give this coin to your <color=red>red</color> teammate by pressing the trigger " +
+		"Now, try to give this coin to your <color=red>red</color> teammate by pressing the trigger " +
 		"on your <b>right</b> hand:",
 		
-		"\n\n\n\nAs explained earlier, this experiment will consist of 3 rounds, where each round, you and " +
+		"As explained earlier, this experiment will consist of 3 rounds, where each round, you and " +
 		"your team try to earn " + Interface.Goal + " points as quickly as possible.\n\n" +
 		"Each round, one or both of your teammates' buckets might be transparent, meaning that you will be " +
 		"<b>unable</b> to share coins with that player in that round. (Press your right trigger to continue)",
 		
-		"\n\n\n\nFor instance, this is what you would see if you could share with your <color=#0099ff>blue</color> " +
+		"For instance, this is what you would see if you could share with your <color=#0099ff>blue</color> " +
 		"teammate,\nbut <b>not</b> with your <color=red>red</color> teammate." +
 		"\nYou will always be able to share coins with yourself, no matter the round." +
 		"\n\n(Press your right trigger to continue)",
 		
-		"\n\n\n\nThis is what you would see if you could share with your <color=red>red</color> " +
+		"And this is what you would see if you could share with your <color=red>red</color> " +
 		"teammate,\n but <b>not</b> with your <color=#0099ff>blue</color> teammate." +
 		"\n\n(Press your right trigger to continue)",
 		
-		"\n\n\n\nSince your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
+		"Since your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
 		"like what is in front of you. You will not be able to move past it.\n\n(Press your right trigger to continue)",
 		
-		"\n\n\n\nLastly, the top 3 scores of all previous teams in any round are shown in front.\n" +
-		"This panel will be visible throughout gameplay.\n" +
+		"Lastly, the top 3 scores of all previous teams in any round are shown in front.\n" +
+		"This panel will be visible throughout gameplay.\n\n" +
 		"(Press your right trigger to continue)",
 		
-		"\n\n\n\nYou are now ready to play.\nYou may quit playing any time you wish." +
-		"\nIf you have no further questions, press your right trigger to begin.",
+		"You are now ready to play.\nYou may quit playing any time you wish." +
+		"\n\nIf you have no further questions,\npress your right trigger to begin.",
 		
 		"END",
 	};
@@ -411,7 +516,15 @@ public class Tutorial : MonoBehaviour {
 		Interface.MyScore = 0;
 		Interface.UpdateScore();
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
-		controllerHelper.SetVisible(false);
+		
+		RightTriggerArrow.SetActive(false);
+		LeftTriggerArrow.SetActive(false);
+		AArrow.SetActive(false);
+		BArrow.SetActive(false);
+		RightTriggerHighlight.SetActive(true);
+		LeftTriggerHighlight.SetActive(true);
+		BHighlight.SetActive(true);
+		
 		HelpText.enabled = false;
 		Interface.buckets.HardSet(false);
 		timeCount = -1f;
