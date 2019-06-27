@@ -70,6 +70,8 @@ const GOAL = 30;
 
 var empties;// = getEmptyPatches(NUM_EMPTY_CELLS);
 
+var gameBegan = false;
+
 
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
@@ -198,12 +200,13 @@ io.on('connection', (socket) => {
 			console.log(msg);
 		});
 		
-		if (Object.keys(users).length == GAME_SIZE) {
+		if (Object.keys(users).length == GAME_SIZE && !gameBegan) { //<-- To prevent rapid disconnect -> reconnect from ending game
 			//Bring users out of lobby, position at x: -4, x: 0, and x: 4:
 			start();
 			startTime = -1;
 			update();
 			setTimeout(() => sendCoins(), COUNTDOWN_TIME);
+			gameBegan = true;
 
 			///TEST CODE HERE:
 			//let ids = Object.keys(users);
@@ -384,5 +387,6 @@ const endGame = () => {
 	trial = 0;
 	users = {};
 	game_num++; //TODO server start command argument for game_num
+	gameBegan = false;
 }
 
