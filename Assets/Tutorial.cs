@@ -33,6 +33,8 @@ public class Tutorial : MonoBehaviour {
 		LeaderboardExplanation = 18,
 		EndStep = 19;
 
+	private const float MinRange = 60f; //Higher than Interface.MinRange for tutorial
+
 	private static TextMeshPro HelpText;
 	public static int CurrStep = 0;
 	//private static ControllerHelper controllerHelper;
@@ -138,9 +140,9 @@ public class Tutorial : MonoBehaviour {
 		if (InTutorial && CurrStep < EndStep) {
             if (CurrStep >= ShowBucketsStep) {
                 float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
-                Interface.light.range = Mathf.Max(Interface.MinRange + 35f, Interface.light.range - decr * Time.deltaTime);
-                RedRange = Mathf.Max(Interface.MinRange + 35f, RedRange - decr * Time.deltaTime);
-                BlueRange = Mathf.Max(Interface.MinRange + 35f, BlueRange - decr * Time.deltaTime);
+                Interface.light.range = Mathf.Max(MinRange, Interface.light.range - decr * Time.deltaTime);
+                RedRange = Mathf.Max(MinRange + 35f, RedRange - decr * Time.deltaTime);
+                BlueRange = Mathf.Max(MinRange + 35f, BlueRange - decr * Time.deltaTime);
             }
 
             if (Input.GetKeyDown(KeyCode.Space)) { //shortcut

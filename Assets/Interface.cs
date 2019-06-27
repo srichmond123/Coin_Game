@@ -20,7 +20,7 @@ public class Interface : MonoBehaviour {
 	public static Color NullColor => Color.magenta;
 
 	public const float 
-		MinRange = 25f,
+		MinRange = 35f,
 		MaxRange = 200f,
 		OwnRangeIncrease = 22f, 
 		OtherRangeIncrease = 22f, 
@@ -135,6 +135,13 @@ public class Interface : MonoBehaviour {
 		redBucketTransform = GameObject.Find("bucket (2)").transform;
 	}
 
+	private void OnApplicationQuit() {
+		if (socket.enabled) { //Means player is quitting early, must notify others
+			socket.Emit("quit");
+			socket.enabled = false;
+		}
+	}
+
 
 	public static void ToggleLobby(bool inLobby) {
 		_inLobby = inLobby;
@@ -145,9 +152,17 @@ public class Interface : MonoBehaviour {
 	private void HandleRejection(SocketIOEvent e) {
 		ToggleCountdown(true);
 		socket.enabled = false;
-		PrevRoundScoreText = "Your team finished round 3 in "
-                         + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
-                         "The game is over, thank you for your participation";
+		if (!e.data["quit"].b) {
+			PrevRoundScoreText = "Your team finished round 3 in "
+			                     + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
+			                     "The game is over, thank you for your participation.";
+		}
+		else {
+			ToggleLobby(false);
+			PrevRoundScoreText = "Since one of your teammates has quit, the game is now over.\n\n" +
+			                     "Thank you for your participation.";
+		}
+
 		countdownText.text = PrevRoundScoreText;
 	}
 

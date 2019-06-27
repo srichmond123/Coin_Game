@@ -28,10 +28,6 @@ public class Coin : MonoBehaviour {
 		transform.GetChild(0).GetComponent<Renderer>().material.color = c;
 	}
 
-	public string GetId() {
-		return id;
-	}
-
 	public void SetParent(CoinManager parent) {
 		this.parent = parent;
 	}

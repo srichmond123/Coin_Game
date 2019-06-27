@@ -1,3 +1,6 @@
+const RELEASE = false; 
+
+
 const express = require('express');
 const session = require('express-session');
 const http = require('http');
@@ -67,9 +70,11 @@ const GOAL = 30;
 
 var empties;// = getEmptyPatches(NUM_EMPTY_CELLS);
 
+
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
 		console.log('client connected: ' + socket.id);
+		
 		users[socket.id] = {};
 		coinCount[socket.id] = {};
 
@@ -106,13 +111,22 @@ io.on('connection', (socket) => {
 			}
 		});
 		*/
+		socket.on("quit", () => {
+			if (RELEASE) {
+				for (let id of Object.keys(users)) {
+					if (id != socket.id) {
+						io.to(id).emit('getOut', {quit: true});
+					}
+					endGame();
+				}
+			}
+		});
 
 		socket.on('disconnect', () => {
-			//delete users[socket.id]; //TODO Uncomment these lines, broadcast to everybody that somebody left and experiment's over
-			//delete endzone[socket.id];
-			//console.log('client disconnected');
-			//CLEAR UPDATE INTERVAL
-			//clearTimeout(intervalId); //like that
+			if (RELEASE) {
+				delete users[socket.id];
+				console.log('client disconnected');
+			}
 		});
 
 		socket.on('collect', (data) => {
@@ -269,7 +283,7 @@ const nextRound = () => {
 	// Keep count of users done, if == GAME_SIZE and trial <= 2, call start method,
 	// otherwise, set trial = 0, disconnect everyone
 	//Start new game
-	console.log("Round " + trial + " over");
+	console.log("Round " + (trial + 1) + " over");
 	gameScore = 0;
 	if (trial < 2) {
 		start();
@@ -279,11 +293,9 @@ const nextRound = () => {
 	} else { //All 3 trials done, notify everyone, break socket connections.
 		all_ids = Object.keys(users);
 		for (let id of all_ids) {
-			io.to(id).emit('getOut');
+			io.to(id).emit('getOut', {quit: false});
 		}
-		users = {};
-		trial = 0;
-		game_num++; //TODO server start command argument for game_num
+		endGame();
 	}
 }
 
@@ -364,4 +376,13 @@ const getEmptyPatches = (num) => {
 	return res;
 }
 
+const endGame = () => {
+	//TODO server start command argument for game_num
+	startTime = -1;
+	clearTimeout(intervalId);
+	intervalId = -1;
+	trial = 0;
+	users = {};
+	game_num++; //TODO server start command argument for game_num
+}
 
