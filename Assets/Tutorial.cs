@@ -284,7 +284,7 @@ public class Tutorial : MonoBehaviour {
 			case ShowCoinRulesStep: {
 				helpArrow.GetComponent<MeshRenderer>().enabled = false;
 				SpawnCoin(Color.red, -2.5f);
-				SpawnCoin(Color.green, 1);
+				SpawnCoin(Color.green, 0);
 				SpawnCoin(Color.blue, 4.5f);
 				break;
 			}
@@ -314,7 +314,7 @@ public class Tutorial : MonoBehaviour {
 			case CollectSecondTime: {
 				BArrow.SetActive(false);
 				AArrow.SetActive(true);
-				SpawnCoin(Color.green, offset: 0f);
+				SpawnCoin(Color.green, offset: -0.25f);
 				SpawnCoin(Color.blue, offset: 3f);
 				break;
 			}
@@ -331,7 +331,7 @@ public class Tutorial : MonoBehaviour {
 			case CollectThirdTime: {
 				LeftTriggerArrow.SetActive(false);
 				AArrow.SetActive(true);
-				SpawnCoin(Color.green, offset: -1f);
+				SpawnCoin(Color.green, offset: -0.5f);
 				break;
 			}
 
@@ -405,7 +405,7 @@ public class Tutorial : MonoBehaviour {
 	private static void SpawnBoundary() {
 		GameObject inst = Instantiate(_boundsPrefab);
 		Vector3 looking = Interface.GetMyForward(); //myTransform.forward;
-		Vector3 position = Interface.GetMyPosition() + looking * 7f;
+		Vector3 position = Interface.GetMyPosition() + looking * 13f;
 		position.y = terrainScript.transform.localPosition.y;
 		Vector3 finalPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.transform.localPosition = finalPosition;

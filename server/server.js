@@ -13,7 +13,7 @@ var generation = require('./generation');
 const port = process.env.PORT || 4001;
 const app = express();  
 //app.set('trust proxy', 1);
-app.set('port', (process.env.PORT || 4001));
+app.set('port', port);
 const server = http.createServer(app);
 const io = socketIO(server);
 io.set('transports', ['websocket']);
@@ -76,7 +76,7 @@ var gameBegan = false;
 io.on('connection', (socket) => {
 	if (Object.keys(users).length < GAME_SIZE) {
 		console.log('client connected: ' + socket.id);
-		
+
 		users[socket.id] = {};
 		coinCount[socket.id] = {};
 
@@ -125,10 +125,7 @@ io.on('connection', (socket) => {
 		});
 
 		socket.on('disconnect', () => {
-			if (RELEASE) {
-				delete users[socket.id];
-				console.log('client disconnected');
-			}
+			console.log('client disconnected');
 		});
 
 		socket.on('collect', (data) => {
@@ -303,7 +300,7 @@ const nextRound = () => {
 }
 
 //Returns object of ids as key, values = array of ids they can communicate with:
-const getTopology = (ids, trial) => { //TODO mix up due to finishing tutorial time confound:
+const getTopology = (ids, trial) => {
 	let ret = {};
 	let randIds = shuffle(ids);
 	top_idx = getTopologyIndex(trial, game_num);
@@ -380,13 +377,12 @@ const getEmptyPatches = (num) => {
 }
 
 const endGame = () => {
-	//TODO server start command argument for game_num
 	startTime = -1;
 	clearTimeout(intervalId);
 	intervalId = -1;
 	trial = 0;
 	users = {};
-	game_num++; //TODO server start command argument for game_num
+	game_num++;
 	gameBegan = false;
 }
 

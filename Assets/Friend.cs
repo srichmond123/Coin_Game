@@ -93,23 +93,16 @@ public class Friend : MonoBehaviour {
 
 	//Turn raw server data into position, rotation for specific this.id:
 	public void AdjustTransform(JSONObject data, bool hardSet) {
-		//JSONObject myData = data[Controller.MyId];
-		JSONObject myData = data[id];
+		JSONObject myData;
+		if (!Interface.Release) myData = data[Interface.MyId];
+		else myData = data[id];
 		JSONObject pos = myData["position"];
 		JSONObject rot = myData["rotation"];
 		light.range = myData["range"].f;
-		//if (myData["flying"].b != flying) {
 		flying = myData["flying"].b;
-		/*
-			if (flying) {
-				animation.Play();
-			}
-			else {
-				animation.Stop();
-			}
-		}*/
 
-		Vector3 tPosition = Interface.DeserializeVector3(pos) + new Vector3(10, 0, 10);
+		Vector3 tPosition = Interface.DeserializeVector3(pos);
+		if (!Interface.Release) tPosition += new Vector3(10, 0, 10);
 		Quaternion tRotation = Interface.DeserializeQuaternion(rot);
 
 		Transform t = transform;
@@ -123,6 +116,7 @@ public class Friend : MonoBehaviour {
 		if (positionQueue.Count > 2) {
 			startQueue = true;
 		} else if (positionQueue.Count < 1) {
+			Debug.Log("Ran out");
 			startQueue = false;
 		}
 	}

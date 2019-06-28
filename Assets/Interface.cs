@@ -34,16 +34,20 @@ public class Interface : MonoBehaviour {
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
-	private const float HeightThreshold = 0.8f; //How high user can be above terrain Y
+	private const float HeightThreshold = 1.4f; //How high user can be above terrain Y
 	private static Vector3 BarOrigin;
 	
 	//private const int ZeroScoreRight = 347;
 	//private const int MaxScoreRight = -200;
 	private const float MaxScale = 0.18f;
 
-	public static bool DisableVr = false;
+	public static bool DisableVR;
+	
+	public bool _disableVR;
+	public bool _release = false;
+	public static bool Release;
 
-	private float speed = 4f;
+	private static float speed = 4f;
 	public static SocketIOComponent socket;
 	private const string BlankId = "BLANK";
 	public static string MyId = BlankId;
@@ -56,7 +60,6 @@ public class Interface : MonoBehaviour {
 
 	private Transform blueBucketTransform, greenBucketTransform, redBucketTransform;
 	//public GameObject arrowOfVirtue;
-	public int _MyCoins, _OtherCoins;
 	private static bool flying = false;
 	private static bool slowingDown = false;
 	private float currBoost = 1f;
@@ -85,7 +88,9 @@ public class Interface : MonoBehaviour {
 	public static MeshRenderer LeaderBoard;
 
 	private void Start() {
-		if (DisableVr) {
+		Release = _release;
+		DisableVR = _disableVR;
+		if (DisableVR) {
 			XRSettings.LoadDeviceByName("");
 			XRSettings.enabled = false;
 		}
@@ -147,6 +152,11 @@ public class Interface : MonoBehaviour {
 		_inLobby = inLobby;
 		lobbyText.enabled = inLobby;
 		_loadingCircle.Set(inLobby);
+		if (_inLobby) {
+			slowingDown = true;
+			speed = 0f;
+			flying = false;
+		}
 	}
 
 	private void HandleRejection(SocketIOEvent e) {
@@ -167,8 +177,8 @@ public class Interface : MonoBehaviour {
 	}
 
 	private void _displayCoins() {
-		_MyCoins = MyCoinsOwned;
-		_OtherCoins = OtherCoinsOwned;
+		//_MyCoins = MyCoinsOwned;
+		//_OtherCoins = OtherCoinsOwned;
 	}
 
 	private void HandleStart(SocketIOEvent e) {
@@ -342,8 +352,7 @@ public class Interface : MonoBehaviour {
 		}
 		else {
 			foreach (Friend f in friends) {
-				//f.AdjustTransform(e.data["users"], !setInitialPositions);
-				//TODO uncomment above line
+				f.AdjustTransform(e.data["users"], !setInitialPositions);
 			}
 			setInitialPositions = true;
 		}
@@ -444,7 +453,7 @@ public class Interface : MonoBehaviour {
 			
 		} else {
 			AdjustMyLight();
-			if (!DisableVr) {
+			if (!DisableVR) {
 				if (OVRInput.GetDown(OVRInput.RawButton.A)) {
 					//A button pressed, right controller:
 					//Fly(speed * Time.deltaTime);
@@ -608,7 +617,7 @@ public class Interface : MonoBehaviour {
 	}
 
 	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
-		if (!DisableVr) {
+		if (!DisableVR) {
 			return _centerEyeTransform.localRotation;
 			//return _interfaceTransform.GetChild(0).GetChild(0).localRotation;
 		}
