@@ -47,9 +47,9 @@ public class Tutorial : MonoBehaviour {
 	private static CoinManager coinManager;
 	private static Transform myTransform;
 
-	private static Vector3 arrowPositionScoreText => new Vector3(0.515f, 0.783f, 0.563f);
-	private static Vector3 arrowPositionScoreBar => new Vector3(0.602f, 0.855f, 0.563f);
-	private static Vector3 arrowPositionTimer => new Vector3(0.529f, 0.475f, 0.563f);
+	private static Vector3 arrowPositionScoreText => new Vector3(0.515f, 0.783f, 1.557f);
+	private static Vector3 arrowPositionScoreBar => new Vector3(0.602f, 0.855f, 1.557f);
+	private static Vector3 arrowPositionTimer => new Vector3(0.529f, 0.475f, 1.557f);
 	private static float arrowXRotationScoreText => 0f;
 	private static float arrowXRotationScoreBar => -45f;
 	private static float arrowXRotationTimer => arrowXRotationScoreText;
@@ -345,6 +345,8 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case TopologyExplanation: {
+				MyScore = RedScore = BlueScore = 0;
+				Interface.UpdateScore();
 				break;
 			}
 
@@ -386,7 +388,7 @@ public class Tutorial : MonoBehaviour {
 	
 	private static void SpawnCoin(Color col, float offset) {
 		GameObject inst = Instantiate(coinPrefab);
-		Vector3 position = Interface.GetMyPosition() + myTransform.forward * 6.0f + myTransform.right * offset;
+		Vector3 position = Interface.GetMyPosition() + Interface.GetMyForward() * 6.0f + Interface.GetMyRight() * offset;
 		position.y = terrainScript.transform.localPosition.y + 7.2f;
 		inst.transform.localPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.GetComponent<Collider>().enabled = false;
@@ -402,14 +404,14 @@ public class Tutorial : MonoBehaviour {
 
 	private static void SpawnBoundary() {
 		GameObject inst = Instantiate(_boundsPrefab);
-		Vector3 looking = myTransform.forward;
+		Vector3 looking = Interface.GetMyForward(); //myTransform.forward;
 		Vector3 position = Interface.GetMyPosition() + looking * 7f;
 		position.y = terrainScript.transform.localPosition.y;
 		Vector3 finalPosition = position + Vector3.up * terrainScript.GetHeightAt(position);
 		inst.transform.localPosition = finalPosition;
 		inst.transform.localScale = new Vector3(700f, 70f, 0.1f);
 		inst.transform.localRotation = Interface.GetMyRotation();
-		Interface.SetTutorialBoundary(finalPosition, looking, myTransform.right);
+		Interface.SetTutorialBoundary(finalPosition, looking, Interface.GetMyRight());
 		instances.Add(inst);
 	}
 
@@ -417,14 +419,14 @@ public class Tutorial : MonoBehaviour {
 		GameObject redInst = Instantiate(_redWhalePrefab);
 		Vector3 forwardVec = Interface.GetMyForward();
 		forwardVec.y = 0.4f; //eye level
-		redInst.transform.localPosition = Interface.GetMyPosition() + forwardVec * 5f + 2.5f * myTransform.right;
+		redInst.transform.localPosition = Interface.GetMyPosition() + forwardVec * 8f + 2.5f * Interface.GetMyRight();
 		redInst.transform.localRotation = Interface.GetMyRotation();
-		redInst.transform.Rotate(Vector3.up, 180f + 45f);
+		redInst.transform.Rotate(Vector3.up, 45f);
 		instances.Add(redInst);
 		GameObject blueInst = Instantiate(_blueWhalePrefab);
-		blueInst.transform.localPosition = redInst.transform.localPosition + -5f * myTransform.right;
+		blueInst.transform.localPosition = redInst.transform.localPosition + -5f * Interface.GetMyRight();
 		blueInst.transform.localRotation = Interface.GetMyRotation();
-		blueInst.transform.Rotate(Vector3.up, 180f - 45f);
+		blueInst.transform.Rotate(Vector3.up, -45f);
 		instances.Add(blueInst);
 	}
 	

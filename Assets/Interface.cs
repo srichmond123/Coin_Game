@@ -41,7 +41,7 @@ public class Interface : MonoBehaviour {
 	//private const int MaxScoreRight = -200;
 	private const float MaxScale = 0.18f;
 
-	public static bool DisableVr = true;
+	public static bool DisableVr = false;
 
 	private float speed = 4f;
 	public static SocketIOComponent socket;
@@ -610,11 +610,17 @@ public class Interface : MonoBehaviour {
 	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
 		if (!DisableVr) {
 			return _centerEyeTransform.localRotation;
+			//return _interfaceTransform.GetChild(0).GetChild(0).localRotation;
 		}
 		return _interfaceTransform.localRotation;
 	}
 
 	public static Vector3 GetMyForward() {
 		return _centerEyeTransform.forward;
+		//return _interfaceTransform.GetChild(0).GetChild(0).forward;
+	}
+
+	public static Vector3 GetMyRight() {
+		return _centerEyeTransform.right;
 	}
 }
