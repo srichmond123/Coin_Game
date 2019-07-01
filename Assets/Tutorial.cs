@@ -27,11 +27,16 @@ public class Tutorial : MonoBehaviour {
 		CollectThirdTime = 12,
 		ShareRed = 13,
 		TopologyExplanation = 14,
+		/*
 		TopologyExample1 = 15,
 		TopologyExample2 = 16,
 		BoundsExplanation = 17,
 		LeaderboardExplanation = 18,
 		EndStep = 19;
+		*/
+		BoundsExplanation = 15,
+		LeaderboardExplanation = 16,
+		EndStep = 17;
 
 	private const float MinRange = 60f; //Higher than Interface.MinRange for tutorial
 
@@ -174,8 +179,8 @@ public class Tutorial : MonoBehaviour {
 		switch (CurrStep) {
 			case ShowBucketsStep: 
 			case TopologyExplanation: 
-			case TopologyExample1: 
-			case TopologyExample2:
+			//case TopologyExample1: 
+			//case TopologyExample2:
 			case BoundsExplanation:
 			case LeaderboardExplanation:
 			case EndStep: {
@@ -347,13 +352,13 @@ public class Tutorial : MonoBehaviour {
 			case TopologyExplanation: {
 				MyScore = RedScore = BlueScore = 0;
 				Interface.UpdateScore();
-				break;
-			}
-
-			case TopologyExample1: case TopologyExample2: {
 				Interface.buckets.Show();
 				break;
 			}
+
+			/*case TopologyExample1: case TopologyExample2: {
+				break;
+			}*/
 
 			case BoundsExplanation: {
 				Interface.buckets.Hide();
@@ -480,11 +485,12 @@ public class Tutorial : MonoBehaviour {
 		"Now, try to give this coin to your <color=red>red</color> teammate by pressing the trigger " +
 		"on your <b>right</b> hand:",
 		
-		"As explained earlier, this experiment will consist of 3 rounds, where each round, you and " +
+		"This experiment will consist of 3 rounds, where each round, you and " +
 		"your team try to earn " + Interface.Goal + " points as quickly as possible.\n\n" +
-		"Each round, one or both of your teammates' buckets might be transparent, meaning that you will be " +
-		"<b>unable</b> to share coins with that player in that round. (Press your right trigger to continue)",
+		"Each round, one of your teammates' buckets might be transparent, and you will be " +
+		"<b>unable</b> to share coins with that player, as shown: (Press your right trigger to continue)",
 		
+		/*
 		"For instance, this is what you would see if you could share with your <color=#0099ff>blue</color> " +
 		"teammate,\nbut <b>not</b> with your <color=red>red</color> teammate." +
 		"\nYou will always be able to share coins with yourself, no matter the round." +
@@ -493,7 +499,7 @@ public class Tutorial : MonoBehaviour {
 		"And this is what you would see if you could share with your <color=red>red</color> " +
 		"teammate,\n but <b>not</b> with your <color=#0099ff>blue</color> teammate." +
 		"\n\n(Press your right trigger to continue)",
-		
+		*/
 		"Since your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
 		"like what is in front of you. You will not be able to move past it.\n\n(Press your right trigger to continue)",
 		
@@ -501,7 +507,7 @@ public class Tutorial : MonoBehaviour {
 		"This panel will be visible throughout gameplay.\n\n" +
 		"(Press your right trigger to continue)",
 		
-		"You are now ready to play.\nYou may quit playing any time you wish." +
+		"You are now ready to play." +
 		"\n\nIf you have no further questions,\npress your right trigger to begin.",
 		
 		"END",

@@ -21,6 +21,7 @@ public class Friend : MonoBehaviour {
 	private List<float> timestampQueue;
 	private bool startQueue = false;
 	private float interval = 0f;
+	private float speed = 0f;
 	public int Score = 0, MyCoins = 0, OtherCoins = 0;
 	private Animation animation;
 
@@ -55,8 +56,17 @@ public class Friend : MonoBehaviour {
 				interval = targetTime - oldTime;
 			}
 			timeSinceUpdate += Time.deltaTime;
-			transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval);
-			transform.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
+			
+			Vector3 dir = Vector3.Normalize(targetPosition - oldPosition);
+			Vector3 incr = speed * Time.deltaTime * dir;
+			Transform tr = transform;
+			tr.localPosition += incr;
+			if (!speed.Equals(0f)) {
+				//tr.localRotation = Quaternion.LookRotation(incr);
+			}
+			
+			//transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval); //<--lurchy method
+			tr.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
 		}
 	}
 
@@ -102,22 +112,26 @@ public class Friend : MonoBehaviour {
 		flying = myData["flying"].b;
 
 		Vector3 tPosition = Interface.DeserializeVector3(pos);
-		if (!Interface.Release) tPosition += new Vector3(10, 0, 10);
+		if (!Interface.Release) tPosition += new Vector3(10f, 0f, 10f);
 		Quaternion tRotation = Interface.DeserializeQuaternion(rot);
 
+		speed = myData["speed"].f;
 		Transform t = transform;
 		if (hardSet) {
 			t.localPosition = tPosition;
 			t.localRotation = tRotation;
 		}
-		positionQueue.Add(tPosition);
-		rotationQueue.Add(tRotation);
-		timestampQueue.Add(Time.time);
-		if (positionQueue.Count > 2) {
-			startQueue = true;
-		} else if (positionQueue.Count < 1) {
-			Debug.Log("Ran out");
-			startQueue = false;
+		else {
+			positionQueue.Add(tPosition);
+			rotationQueue.Add(tRotation);
+			timestampQueue.Add(Time.time);
+			if (positionQueue.Count > 2) {
+				startQueue = true;
+			}
+			else if (positionQueue.Count < 1) {
+				Debug.Log("Ran out");
+				startQueue = false;
+			}
 		}
 	}
 }

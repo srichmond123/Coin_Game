@@ -1,5 +1,6 @@
-const RELEASE = false; 
-
+//env (for pilots): GOAL, SCALE, COINS_PER, 
+//	MIN_RANGE, RANGE_DECREASE, RANGE_INCREASE
+const RELEASE = process.env.RELEASE || false; 
 
 const express = require('express');
 const session = require('express-session');
@@ -20,12 +21,16 @@ io.set('transports', ['websocket']);
 
 const GAME_SIZE = 3;
 const NUM_ROWS = 10; //GRID size
-const UPDATE_INTERVAL = 200; // (In milliseconds)
-const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
-const COINS_PER_PLAYER = 40;
+const UPDATE_INTERVAL = 100; // (In milliseconds)
+//const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
+const COINS_PER_PLAYER = process.env.COINS_PER || 40;
+
+////// old code
 const NUM_CLUMPS = 10; //(per player);
 const NEW_CLUMP_MIN_TIME = 2000;
 const NEW_CLUMP_MAX_TIME = 5000;
+//////
+
 const NUM_EMPTY_CELLS = 35;
 const COUNTDOWN_TIME = 1000 * 10;
 var users = {}; //id as index, position and rotation stored
@@ -35,15 +40,13 @@ var coinsToRegenerate = COINS_PER_PLAYER / NUM_CLUMPS; //Changes randomly each a
 var coins = {}; //id: coins: [vec1, vec2, ...].
 var MAP_ORIGIN = { 
 	x: -4.88, 
-	y: 4.5976, //-0.98 = old y
+	y: 4.5976, //Terrain stuff, this variable isn't that important, could just be (0, 0, 0) but whatever
 	z: -0.978
 };
 var MAP_SCALE = { 
-	//x: 10.0,
-	//z: 18.296 
-	x: 300.0,
-	y: 0.0,
-	z: 300.0,
+	x: (process.env.SCALE || 300) * 1.0,
+	y: 0,
+	z: (process.env.SCALE || 300) * 1.0,
 }; //Generate on 2D surface, raise y according to terrain dim
 
 /*
@@ -65,7 +68,7 @@ var coinQueue = {};
 var gameScore = 0;
 var startTime;
 var intervalId = -1;
-const GOAL = 30;
+const GOAL = process.env.GOAL || 30;
 
 
 var empties;// = getEmptyPatches(NUM_EMPTY_CELLS);
@@ -249,6 +252,9 @@ const start = () => {
 			id: id,
 			position,
 			goal: GOAL,
+			minRange: (process.env.MIN_RANGE || 35) * 1.0,
+			rangeDecrease: (process.env.RANGE_DECREASE || 2) * 1.0,
+			rangeIncrease: (process.env.RANGE_INCREASE || 22) * 1.0,
 			topology,
 			origin: MAP_ORIGIN,
 			scale: MAP_SCALE, //Allows players to figure out bounds for minimap and out of bounds warnings

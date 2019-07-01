@@ -14,6 +14,7 @@ public class CoinManager : MonoBehaviour {
 	private static SocketIOComponent socket;
 	private Buckets buckets;
 	private TerrainScript terrainScript;
+	private AudioSource coinSound;
 	void Start() {
 		coins = new List<GameObject>();
 		GameObject sockObject = GameObject.Find("SocketIO");
@@ -23,6 +24,7 @@ public class CoinManager : MonoBehaviour {
 		socket.On("coins", HandleCoins);
 		socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
 		socket.On("newCoin", HandleNewCoin);
+		coinSound = GetComponentInChildren<AudioSource>();
 	}
 
 	[Obsolete("Only use this method in the tutorial")]
@@ -112,6 +114,8 @@ public class CoinManager : MonoBehaviour {
 		send.AddField("index", index);
 		send.AddField("position", Interface.SerializeVector3(Interface.GetMyPosition()));
 		socket.Emit("collect", send);
+		coinSound.transform.position = coins[index].transform.position;
+		coinSound.Play();
 		Destroy(coins[index]);
 		coins[index] = null;
 		buckets.Handle();

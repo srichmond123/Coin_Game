@@ -12,7 +12,7 @@ public class Coin : MonoBehaviour {
 	private bool collided = false;
 	private float albedo = 1f;
 	private float speed = 0f;
-	
+
 	void Start() {
 		speed = Random.Range(170f, 190f);
 	}

@@ -19,9 +19,9 @@ using Vector2 = UnityEngine.Vector2;
 public class Interface : MonoBehaviour {
 	public static Color NullColor => Color.magenta;
 
-	public const float 
+	public static float 
 		MinRange = 35f,
-		MaxRange = 200f,
+		//MaxRange = 200f,
 		OwnRangeIncrease = 22f, 
 		OtherRangeIncrease = 22f, 
 		ConstDecrease = 2.0f, 
@@ -44,8 +44,8 @@ public class Interface : MonoBehaviour {
 	public static bool DisableVR;
 	
 	public bool _disableVR;
-	public bool _release = false;
-	public static bool Release;
+	public static bool Release = false;
+	
 
 	private static float speed = 4f;
 	public static SocketIOComponent socket;
@@ -88,7 +88,6 @@ public class Interface : MonoBehaviour {
 	public static MeshRenderer LeaderBoard;
 
 	private void Start() {
-		Release = _release;
 		DisableVR = _disableVR;
 		if (DisableVR) {
 			XRSettings.LoadDeviceByName("");
@@ -101,7 +100,14 @@ public class Interface : MonoBehaviour {
 		friends.Add(GameObject.Find("Player_2").GetComponent<Friend>());
 		
 		socket = GameObject.Find("SocketIO").GetComponent<SocketIOComponent>();
-
+		
+		//TODO hard set since this doesn't work:
+		/*
+		socket.url = Release
+			? "ws://red-doright-23845.herokuapp.com/socket.io/?EIO=4&transport=websocket"
+			: "ws://127.0.0.1:4001/socket.io/?EIO=4&transport=websocket";
+			*/
+			
 		socket.On("start", HandleStart);
 		socket.On("update", HandleUpdate);
 		socket.On("give", HandleGenerosity);
@@ -191,8 +197,14 @@ public class Interface : MonoBehaviour {
 			+ terrainScript.transform.localPosition.y
 			+ HeightThreshold + 0.1f;
 		transform.localPosition = myPos;
+		
 		JSONObject topologyArray = e.data["topology"][MyId];
 		Goal = (int) e.data["goal"].n;
+		MinRange = e.data["minRange"].f;
+		//MaxRange = e.data["maxRange"].f;
+		OwnRangeIncrease = OtherRangeIncrease = e.data["rangeIncrease"].f;
+		ConstDecrease = e.data["rangeDecrease"].f;
+		
 		permissibleIndividuals.Clear();
 		for (int i = 0; i < topologyArray.Count; i++) {
 			permissibleIndividuals.Add(topologyArray[i].str);
@@ -374,6 +386,7 @@ public class Interface : MonoBehaviour {
 		send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
 		send.AddField("range", light.range);
 		send.AddField("flying", flying);
+		send.AddField("speed", speed);
 		socket.Emit("update", send);
 	}
 

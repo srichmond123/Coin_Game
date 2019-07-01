@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class WakeServer : MonoBehaviour {
-    public string url;
+    private string url;
     void Start() {
+        url = Interface.Release ? "https://red-doright-23845.herokuapp.com" : "https://google.com";
         StartCoroutine(GetRequest(url));
     }
 
