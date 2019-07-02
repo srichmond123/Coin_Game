@@ -189,6 +189,7 @@ public class Tutorial : MonoBehaviour {
 			}
 			case TryBucketsStep: {
 				if (Buckets.CompareRGB(Color.green, col)) {
+					Interface.buckets.PlaySound();
 					Interface.buckets.Hide();
 					Interface.MyCoinsOwned += 1;
 					NextStep();
@@ -198,6 +199,7 @@ public class Tutorial : MonoBehaviour {
 
 			case ShareBlue: {
 				if (Buckets.CompareRGB(Color.blue, col)) {
+					Interface.buckets.PlaySound();
 					Interface.buckets.Hide();
 					BlueRange += Interface.OtherRangeIncrease;
 					NextStep();
@@ -207,6 +209,7 @@ public class Tutorial : MonoBehaviour {
 
 			case ShareRed: {
 				if (Buckets.CompareRGB(Color.red, col)) {
+					Interface.buckets.PlaySound();
 					Interface.buckets.Hide();
 					RedRange += Interface.OtherRangeIncrease;
 					NextStep();

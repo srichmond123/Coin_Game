@@ -24,7 +24,7 @@ public class CoinManager : MonoBehaviour {
 		socket.On("coins", HandleCoins);
 		socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
 		socket.On("newCoin", HandleNewCoin);
-		coinSound = GetComponentInChildren<AudioSource>();
+        coinSound = GetComponentInChildren<AudioSource>();
 	}
 
 	[Obsolete("Only use this method in the tutorial")]

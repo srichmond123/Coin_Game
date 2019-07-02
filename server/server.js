@@ -1,6 +1,7 @@
 //env (for pilots): GOAL, SCALE, COINS_PER, 
-//	MIN_RANGE, RANGE_DECREASE, RANGE_INCREASE
-const RELEASE = process.env.RELEASE || false; 
+//	MIN_RANGE, RANGE_DECREASE, RANGE_INCREASE,
+// TOPSCORES
+const RELEASE = (process.env.RELEASE == 'true');
 
 const express = require('express');
 const session = require('express-session');
@@ -23,7 +24,7 @@ const GAME_SIZE = 3;
 const NUM_ROWS = 10; //GRID size
 const UPDATE_INTERVAL = 100; // (In milliseconds)
 //const GAME_LENGTH = 1000 * 60 * 10; // 10 minutes
-const COINS_PER_PLAYER = process.env.COINS_PER || 40;
+const COINS_PER_PLAYER = process.env.COINS_PER ? parseInt(process.env.COINS_PER, 10) : 40;
 
 ////// old code
 const NUM_CLUMPS = 10; //(per player);
@@ -57,18 +58,59 @@ var MAP_SCALE = {
  */
 
 var trial = 0; //Will be incremented, used to choose network topology
-//var endzone = {}; //each entry = {id: finished (true/false)} //Each game is timed now
+
+
+var mysql = require('mysql');
+var db_config = {
+	host: "p3plcpnl0561.prod.phx3.secureserver.net",
+	user: "main",
+	password: "AtlanticOceaner",
+	database: "nyu.dsl.vr",
+};
+
+var con;
+function handleDisconnect() {
+    con = mysql.createConnection(db_config);
+
+    con.connect (function(err) {
+        if (err) {
+            console.log('error when connecting to db:', err);
+            setTimeout(handleDisconnect, 2000);
+        }
+    });
+    con.on('error', function(err) {
+        console.log('db error', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            handleDisconnect();
+        } else {
+            throw err;
+        }
+    });
+}
+
+handleDisconnect();
+
+con.query("create table if not exists games(" + 
+	"gameID int primary key not null, time timestamp);", (err, res) => {
+	if (err) console.log(err);
+});
+
 var game_num = 0; 
-/*
- * TODO Initialize value of game_num based on database entry of games
- * played, or txt/json file stored on local computer.
- */
+con.query("select count(*) as c from games;", (err, res) => {
+	if (err) console.log(err);
+	try {
+		game_num = parseInt(res[0].c);
+	} catch(e) {}
+});
+
+console.log("Game num = " + game_num);
+
 
 var coinQueue = {};
 var gameScore = 0;
 var startTime;
 var intervalId = -1;
-const GOAL = process.env.GOAL || 30;
+const GOAL = process.env.GOAL ? parseInt(process.env.GOAL, 10) : 30;
 
 
 var empties;// = getEmptyPatches(NUM_EMPTY_CELLS);
@@ -122,7 +164,7 @@ io.on('connection', (socket) => {
 					if (id != socket.id) {
 						io.to(id).emit('getOut', {quit: true});
 					}
-					endGame();
+					endGame(true);
 				}
 			}
 		});
@@ -301,7 +343,7 @@ const nextRound = () => {
 		for (let id of all_ids) {
 			io.to(id).emit('getOut', {quit: false});
 		}
-		endGame();
+		endGame(false);
 	}
 }
 
@@ -382,13 +424,20 @@ const getEmptyPatches = (num) => {
 	return res;
 }
 
-const endGame = () => {
+const endGame = (quit) => {
 	startTime = -1;
 	clearTimeout(intervalId);
 	intervalId = -1;
 	trial = 0;
 	users = {};
-	game_num++;
+
+	if (!quit) {
+		con.query("insert into games values (" + game_num + ", null);", (err, res) => {
+			if (err) console.log(err);
+		});
+		game_num++;
+	}
+
 	gameBegan = false;
 }
 

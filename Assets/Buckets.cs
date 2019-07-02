@@ -12,9 +12,11 @@ public class Buckets : MonoBehaviour {
 
 	private bool colorsInitialized = false;
 	private GameObject crossInstance;
+	private AudioSource giveSound;
 	void Start() {
 		GameObject sockObject = GameObject.Find("SocketIO");
 		socket = sockObject.GetComponent<SocketIOComponent>();
+		giveSound = GameObject.Find("GiveSound").GetComponent<AudioSource>();
 	}
 
 	public void Handle() {
@@ -80,14 +82,6 @@ public class Buckets : MonoBehaviour {
 						albedo = 0.1f;
 					}
 				}
-				/*
-				else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExample1) {
-					albedo = 0.1f;
-				} 
-				else if (idx == 0 && Tutorial.CurrStep == Tutorial.TopologyExample2) {
-					albedo = 0.1f;
-				}
-				*/
 				else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExplanation) {
 					albedo = 0.1f;
 				}
@@ -119,7 +113,7 @@ public class Buckets : MonoBehaviour {
 	}
 
 	//Apply shift with scale:
-	public void ScaleTo(Transform bar, float newScaleY) {
+	private void ScaleTo(Transform bar, float newScaleY) {
 		Vector3 localScale = bar.localScale;
 		float oldScaleY = localScale.y;
 		float positionChange = -(newScaleY - oldScaleY)/2f;
@@ -154,19 +148,21 @@ public class Buckets : MonoBehaviour {
 		}
 	}
 
+	public void PlaySound() {
+		giveSound.Play();
+	}
+
 	public static bool CompareRGB(Color a, Color b) {
 		return a.r.Equals(b.r) && a.g.Equals(b.g) && a.b.Equals(b.b);
 	}
 
 	public void HandleClick(Color c) {
-		//Color c = GetBucketColor(t);
-		
-		
 		if (coins > 0) {
 			if (!Tutorial.InTutorial) {
 				if (CompareRGB(c, Color.green)) {
 					Interface.MyCoinsOwned++;
 					socket.Emit("claim");
+					PlaySound();
 				}
 				else {
 					foreach (Friend friend in Interface.friends) {
@@ -176,6 +172,7 @@ public class Buckets : MonoBehaviour {
 								dict["id"] = friend.GetId();
 								socket.Emit("give", new JSONObject(dict));
 								friend.OtherCoins++;
+								PlaySound();
 							}
 							else {
 								return;
