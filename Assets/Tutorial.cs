@@ -47,7 +47,8 @@ public class Tutorial : MonoBehaviour {
 	public GameObject redWhalePrefab, blueWhalePrefab, boundsPrefab;
 	private static GameObject _redWhalePrefab, _blueWhalePrefab, _boundsPrefab;
 	private static List<GameObject> instances;
-	private static GameObject coinPrefab, helpArrow;
+	private static GameObject coinPrefab, helpArrow, dirArrow;
+	private static bool _dirArrowVisible = false;
 	private static TerrainScript terrainScript;
 	private static CoinManager coinManager;
 	private static Transform myTransform;
@@ -93,6 +94,8 @@ public class Tutorial : MonoBehaviour {
 		myTransform = transform; //OK since Tutorial.cs isn't going to be instantiated many times
 		helpArrow = GameObject.Find("HelpArrow");
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
+		dirArrow = GameObject.Find("DirArrow");
+		dirArrow.GetComponent<MeshRenderer>().enabled = false;
 
 		GameObject rightAnchor = GameObject.Find("RightHandAnchor/RightControllerAnchor");
 		GameObject leftAnchor = GameObject.Find("LeftHandAnchor/LeftControllerAnchor");
@@ -134,6 +137,12 @@ public class Tutorial : MonoBehaviour {
 		}
 	}
 
+	private static void ToggleDirArrowVisibility(bool b) {
+		if (b == _dirArrowVisible) return;
+		_dirArrowVisible = b;
+		dirArrow.GetComponent<MeshRenderer>().enabled = b;
+	}
+
 	public static void TellClicked() {
         if (CurrStep < ShowCoinsStep || CurrStep == ShowBucketsStep || CurrStep >= TopologyExplanation) {
             NextStep();
@@ -164,6 +173,31 @@ public class Tutorial : MonoBehaviour {
 				if (!Interface.timeText.text.Equals(currTimeStr)) {
 					Interface.timeText.text = currTimeStr;
 				}
+			}
+
+			if (CurrStep == ShowCoinsStep || CurrStep == CollectSecondTime || CurrStep == CollectThirdTime) {
+				//Show arrow pointing to coin if they miss it:
+				float fov = Interface.GetFieldOfView();
+				Vector3 coinPos = coinManager.GetGreenPosition();
+				if (!coinPos.Equals(Vector3.zero)) {
+					Vector3 myPos = Interface.GetMyPosition();
+                    Vector3 myDirVec = Interface.GetMyForward();
+                    Vector3 coinDirVec = coinPos - myPos;
+					if (Vector3.Angle(coinDirVec, myDirVec) > fov / 2f) {
+						ToggleDirArrowVisibility(true);
+                        dirArrow.transform.LookAt(coinPos);
+                        Vector3 eulerAngles = dirArrow.transform.localEulerAngles;
+                        eulerAngles.x += 180f;
+                        eulerAngles.z = 90f;
+                        dirArrow.transform.localEulerAngles = eulerAngles;
+					}
+					else {
+						ToggleDirArrowVisibility(false);
+					}
+				}
+			}
+			else {
+                ToggleDirArrowVisibility(false);
 			}
 		}
 	}
@@ -390,7 +424,6 @@ public class Tutorial : MonoBehaviour {
 		foreach (GameObject o in instances) {
 			Destroy(o);
 		}
-
 		instances.Clear();
 	}
 	
@@ -518,6 +551,7 @@ public class Tutorial : MonoBehaviour {
 	
 	private static void EndTutorial() {
 		DestroyAllInstances();
+		ToggleDirArrowVisibility(false);
 		CurrStep = EndStep;
 		Interface.LeaderBoard.enabled = true;
 		Interface.socket.enabled = true;

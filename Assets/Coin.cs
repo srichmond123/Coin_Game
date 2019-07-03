@@ -12,6 +12,7 @@ public class Coin : MonoBehaviour {
 	private bool collided = false;
 	private float albedo = 1f;
 	private float speed = 0f;
+	private Color _color = Color.white;
 
 	void Start() {
 		speed = Random.Range(170f, 190f);
@@ -26,10 +27,15 @@ public class Coin : MonoBehaviour {
 
 	public void SetColor(Color c) {
 		transform.GetChild(0).GetComponent<Renderer>().material.color = c;
+		_color = c;
 	}
 
 	public void SetParent(CoinManager parent) {
 		this.parent = parent;
+	}
+
+	public Color GetColor() {
+		return _color;
 	}
 
 	private void OnTriggerStay(Collider other) {

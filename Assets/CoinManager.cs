@@ -32,6 +32,20 @@ public class CoinManager : MonoBehaviour {
 		coin.GetComponent<Coin>().index = coins.Count;
 		coins.Add(coin);
 	}
+	
+
+	[Obsolete("Only use this method in the tutorial")]
+	public Vector3 GetGreenPosition() {
+		//Find first (in tutorial only) green, return pos vec:
+		foreach (GameObject c in coins) {
+			if (!c) continue;
+			if (Buckets.CompareRGB(c.GetComponent<Coin>().GetColor(), Color.green)) {
+				return c.transform.localPosition;
+			}
+		}
+
+		return Vector3.zero;
+	}
 
 	void HandleNewCoin(SocketIOEvent e) {
 		string id = e.data["id"].str;

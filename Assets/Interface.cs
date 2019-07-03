@@ -42,9 +42,9 @@ public class Interface : MonoBehaviour {
 	private const float MaxScale = 0.18f;
 
 	public static bool DisableVR;
-	
-	public bool _disableVR;
-	public static bool Release = false;
+
+	public bool _disableVR, _release;
+	public static bool Release = true;
 	
 
 	private static float speed = 4f;
@@ -70,6 +70,7 @@ public class Interface : MonoBehaviour {
 	private float luminosity = 0.2f;
 	public static Light light;
 	private static Transform _interfaceTransform, _centerEyeTransform;
+	private static Camera _camera;
 	public static TextMeshPro scoreText, timeText, lobbyText, countdownText;
 	public static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
@@ -89,6 +90,7 @@ public class Interface : MonoBehaviour {
 
 	private void Start() {
 		DisableVR = _disableVR;
+		Release = _release;
 		if (DisableVR) {
 			XRSettings.LoadDeviceByName("");
 			XRSettings.enabled = false;
@@ -116,6 +118,7 @@ public class Interface : MonoBehaviour {
 		light = GameObject.Find("My Light").GetComponent<Light>();
 		_interfaceTransform = transform; //Since there's only one of these this is fine
 		_centerEyeTransform = GameObject.Find("CenterEyeAnchor").transform;
+		_camera = _centerEyeTransform.GetComponent<Camera>();
 		scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshPro>();
 		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
 		lobbyText = GameObject.Find("LobbyText").GetComponent<TextMeshPro>();
@@ -146,12 +149,13 @@ public class Interface : MonoBehaviour {
 		redBucketTransform = GameObject.Find("bucket (2)").transform;
 	}
 
-	private void OnApplicationQuit() {
+	/*
+	private void OnDestroy() {
 		if (socket.enabled) { //Means player is quitting early, must notify others
 			socket.Emit("quit");
-			socket.enabled = false;
 		}
 	}
+	*/
 
 
 	public static void ToggleLobby(bool inLobby) {
@@ -363,10 +367,13 @@ public class Interface : MonoBehaviour {
 			buckets.Hide();
 		}
 		else {
-			foreach (Friend f in friends) {
-				f.AdjustTransform(e.data["users"], !setInitialPositions);
+			if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
+				foreach (Friend f in friends) {
+					f.AdjustTransform(e.data["users"], !setInitialPositions);
+				}
+
+				setInitialPositions = true;
 			}
-			setInitialPositions = true;
 		}
 		
 		_elapsedMs = (int) e.data["time"].f;
@@ -515,26 +522,6 @@ public class Interface : MonoBehaviour {
 						bool __ = flying ? slowingDown = !slowingDown : flying = true;
 					}
 				}
-				/* //Old system for clicking on the buckets directly
-				if (Input.GetMouseButtonDown(0)) {
-					Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-					RaycastHit hit;
-
-					if (Physics.Raycast(ray, out hit)) {
-						if (hit.transform.tag.Equals("Not Me")) {
-							//ShowGenerosity(hit.transform.GetComponent<Friend>());
-						}
-						else if (hit.transform.tag.Equals("Bucket")) {
-							//buckets.HandleClick(hit.transform);
-						}
-					}
-					else {
-						if (Tutorial.InTutorial) {
-							Tutorial.TellClicked();
-						}
-					}
-				}
-				*/
 				if (Input.GetKeyDown(KeyCode.E)) {
 					if (Tutorial.InTutorial && Tutorial.CurrStep <= Tutorial.ShowBucketsStep) {
 						Tutorial.TellClicked();
@@ -566,6 +553,10 @@ public class Interface : MonoBehaviour {
 		_boundaryBlockBelowLine = looking.z < 0;
 		TutorialBoundarySet = true;
 		//z - z1 = (slope) * (x - x1)
+	}
+
+	public static float GetFieldOfView() {
+		return _camera.fieldOfView;
 	}
 	
 	public static void LogMessage(string s) {
