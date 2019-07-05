@@ -163,7 +163,7 @@ public class Buckets : MonoBehaviour {
 					Interface.MyCoinsOwned++;
 					socket.Emit("claim");
 					PlaySound();
-                    DataCollector.WriteEvent("claim", "me");
+					DataCollector.WriteEvent("claim", "me");
 				}
 				else {
 					foreach (Friend friend in Interface.friends) {
@@ -174,7 +174,7 @@ public class Buckets : MonoBehaviour {
 								socket.Emit("give", new JSONObject(dict));
 								friend.OtherCoins++;
 								PlaySound();
-                                DataCollector.WriteEvent("give", friend.GetId());
+								DataCollector.WriteEvent("give", friend.GetId());
 							}
 							else {
 								return;

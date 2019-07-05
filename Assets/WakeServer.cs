@@ -4,25 +4,25 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class WakeServer : MonoBehaviour {
-    private string url;
-    void Start() {
-        url = GameObject.Find("OVRCameraRig").GetComponent<Interface>()._release ? "https://red-doright-23845.herokuapp.com" : "https://google.com";
-        StartCoroutine(GetRequest(url));
-    }
+	private string url;
+	void Start() {
+		url = GameObject.Find("OVRCameraRig").GetComponent<Interface>()._release ? "https://red-doright-23845.herokuapp.com" : "https://google.com";
+		StartCoroutine(GetRequest(url));
+	}
 
-    IEnumerator GetRequest(string uri) {
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(uri)) {
-            yield return webRequest.SendWebRequest();
+	IEnumerator GetRequest(string uri) {
+		using (UnityWebRequest webRequest = UnityWebRequest.Get(uri)) {
+			yield return webRequest.SendWebRequest();
 
-            string[] pages = uri.Split('/');
-            int page = pages.Length - 1;
+			string[] pages = uri.Split('/');
+			int page = pages.Length - 1;
 
-            if (webRequest.isNetworkError) {
-                Debug.Log("Error");
-            }
-            else {
-                Debug.Log("Connected to " + url);
-            }
-        }
-    }
+			if (webRequest.isNetworkError) {
+				Debug.Log("Error");
+			}
+			else {
+				Debug.Log("Connected to " + url);
+			}
+		}
+	}
 }

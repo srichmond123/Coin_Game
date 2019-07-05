@@ -179,15 +179,15 @@ public class DataCollector : MonoBehaviour {
 	}
 
 	private static void _writeWords(string filePath, string[] words) {
-        _streamWriter = new StreamWriter(filePath, true);
-        string write = "";
-        foreach (string word in words) {
-	        write += word + ",";
-        }
+		_streamWriter = new StreamWriter(filePath, true);
+		string write = "";
+		foreach (string word in words) {
+			write += word + ",";
+		}
 
-        write += "\n";
-        _streamWriter.WriteLine(write);
-        _streamWriter.Close();
+		write += "\n";
+		_streamWriter.WriteLine(write);
+		_streamWriter.Close();
 	}
 
 	public static void SetPath(int gameNum) {
@@ -204,10 +204,10 @@ public class DataCollector : MonoBehaviour {
 		}
 
 		_path += append + "/";
-        Directory.CreateDirectory(_path);
+		Directory.CreateDirectory(_path);
 
-        for (int i = 1; i <= 3; i++) {
-	        Directory.CreateDirectory(_path + "Round_" + i);
-        }
+		for (int i = 1; i <= 3; i++) {
+			Directory.CreateDirectory(_path + "Round_" + i);
+		}
 	}
 }

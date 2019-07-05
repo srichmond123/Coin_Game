@@ -159,13 +159,13 @@ public class Interface : MonoBehaviour {
 		socket.enabled = false;
 		if (!e.data["quit"].b) {
 			PrevRoundScoreText = "Your team finished round 3 in "
-			                     + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
-			                     "The game is over, thank you for your participation.";
+								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
+								 "The game is over, thank you for your participation.";
 		}
 		else {
 			ToggleLobby(false);
 			PrevRoundScoreText = "Since one of your teammates has quit, the game is now over.\n\n" +
-			                     "Thank you for your participation.";
+								 "Thank you for your participation.";
 		}
 
 		countdownText.text = PrevRoundScoreText;
@@ -229,13 +229,13 @@ public class Interface : MonoBehaviour {
 
 		if (RoundNum > 1) { //Tell previous score in countdown waiting room:
 			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "
-			                     + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
+								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
 		}
 		else { //Write to data collector:
-            int gameNum = int.Parse(res["gameNum"]);
-            int coinsPer = int.Parse(res["coinsPer"]);
-            DataCollector.SetPath(gameNum);
-            DataCollector.WriteMetaData(RoundNum, coinsPer);
+			int gameNum = int.Parse(res["gameNum"]);
+			int coinsPer = int.Parse(res["coinsPer"]);
+			DataCollector.SetPath(gameNum);
+			DataCollector.WriteMetaData(RoundNum, coinsPer);
 		}
 	}
 
@@ -243,7 +243,7 @@ public class Interface : MonoBehaviour {
 		int numLeft = (int) e.data["left"].f;
 		if (_inLobby) {
 			lobbyText.text = "We are waiting for " + 
-                 numLeft + " more " + (numLeft == 1 ? "player" : "players");
+				 numLeft + " more " + (numLeft == 1 ? "player" : "players");
 		}
 	}
 
@@ -372,14 +372,14 @@ public class Interface : MonoBehaviour {
 		
 		_elapsedMs = (int) e.data["time"].f;
 		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
-        if (_inCountdown) {
-            int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
-            string text = "Round " + RoundNum + " starts in " + remainder 
-                          + (remainder == 1 ? " second" : " seconds");
-            
-            countdownText.text = PrevRoundScoreText + text;
-        } else {
-            timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
+		if (_inCountdown) {
+			int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
+			string text = "Round " + RoundNum + " starts in " + remainder 
+						  + (remainder == 1 ? " second" : " seconds");
+			
+			countdownText.text = PrevRoundScoreText + text;
+		} else {
+			timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
 		}
 
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
@@ -396,7 +396,7 @@ public class Interface : MonoBehaviour {
 		int minutes = Mathf.FloorToInt(seconds_total / 60f);
 		int seconds = seconds_total % 60;
 		return (minutes > 9 ? "" : " ") + minutes + ":"
-		       + (seconds > 9 ? "" : "0") + seconds;
+			   + (seconds > 9 ? "" : "0") + seconds;
 	}
 
 

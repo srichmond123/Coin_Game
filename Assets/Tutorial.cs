@@ -69,8 +69,8 @@ public class Tutorial : MonoBehaviour {
 		BArrow,
 		BHighlight; /*
 					 * 3 buttons (left trig, right trig, B) for giving coins will be color-highlighted.
-		             * The fly button (A) just needs an arrow
-		             */
+					 * The fly button (A) just needs an arrow
+					 */
 
 	public static int MyScore = 0, RedScore = 0, BlueScore = 0;
 	private static float RedRange = 100f;
@@ -144,28 +144,28 @@ public class Tutorial : MonoBehaviour {
 	}
 
 	public static void TellClicked() {
-        if (CurrStep < ShowCoinsStep || CurrStep == ShowBucketsStep || CurrStep >= TopologyExplanation) {
-            NextStep();
-        }
+		if (CurrStep < ShowCoinsStep || CurrStep == ShowBucketsStep || CurrStep >= TopologyExplanation) {
+			NextStep();
+		}
 	}
 
 	// Update is called once per frame
 	void Update() {
 		if (InTutorial && CurrStep < EndStep) {
-            if (CurrStep >= ShowBucketsStep) {
-                float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
-                Interface.light.range = Mathf.Max(MinRange, Interface.light.range - decr * Time.deltaTime);
-                RedRange = Mathf.Max(MinRange + 35f, RedRange - decr * Time.deltaTime);
-                BlueRange = Mathf.Max(MinRange + 35f, BlueRange - decr * Time.deltaTime);
-            }
+			if (CurrStep >= ShowBucketsStep) {
+				float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
+				Interface.light.range = Mathf.Max(MinRange, Interface.light.range - decr * Time.deltaTime);
+				RedRange = Mathf.Max(MinRange + 35f, RedRange - decr * Time.deltaTime);
+				BlueRange = Mathf.Max(MinRange + 35f, BlueRange - decr * Time.deltaTime);
+			}
 
-            if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
-                EndTutorial();
-            }
-            
-            if (Input.GetKeyDown(KeyCode.R)){
-	            StartOver();
-            }
+			if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
+				EndTutorial();
+			}
+			
+			if (Input.GetKeyDown(KeyCode.R)){
+				StartOver();
+			}
 
 			if (timeCount >= 0f) {
 				timeCount += Time.deltaTime;
@@ -181,17 +181,17 @@ public class Tutorial : MonoBehaviour {
 				Vector3 coinPos = coinManager.GetGreenPosition();
 				if (!coinPos.Equals(Vector3.zero)) {
 					Vector3 myPos = Interface.GetMyPosition();
-                    Vector3 myDirVec = Interface.GetMyForward();
-                    Vector3 coinDirVec = coinPos - myPos;
+					Vector3 myDirVec = Interface.GetMyForward();
+					Vector3 coinDirVec = coinPos - myPos;
 					if (Vector3.Angle(coinDirVec, myDirVec) > fov / 2f) {
 						ToggleDirArrowVisibility(true);
-                        dirArrow.transform.LookAt(coinPos);
-                        /*
-                        Vector3 eulerAngles = dirArrow.transform.localEulerAngles;
-                        eulerAngles.x += 180f;
-                        eulerAngles.z = 90f;
-                        dirArrow.transform.localEulerAngles = eulerAngles;
-                        */
+						dirArrow.transform.LookAt(coinPos);
+						/*
+						Vector3 eulerAngles = dirArrow.transform.localEulerAngles;
+						eulerAngles.x += 180f;
+						eulerAngles.z = 90f;
+						dirArrow.transform.localEulerAngles = eulerAngles;
+						*/
 					}
 					else {
 						ToggleDirArrowVisibility(false);
@@ -199,7 +199,7 @@ public class Tutorial : MonoBehaviour {
 				}
 			}
 			else {
-                ToggleDirArrowVisibility(false);
+				ToggleDirArrowVisibility(false);
 			}
 		}
 	}
