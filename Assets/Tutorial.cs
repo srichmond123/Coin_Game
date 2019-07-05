@@ -95,7 +95,7 @@ public class Tutorial : MonoBehaviour {
 		helpArrow = GameObject.Find("HelpArrow");
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
 		dirArrow = GameObject.Find("DirArrow");
-		dirArrow.GetComponent<MeshRenderer>().enabled = false;
+		dirArrow.GetComponentInChildren<MeshRenderer>().enabled = false;
 
 		GameObject rightAnchor = GameObject.Find("RightHandAnchor/RightControllerAnchor");
 		GameObject leftAnchor = GameObject.Find("LeftHandAnchor/LeftControllerAnchor");
@@ -140,7 +140,7 @@ public class Tutorial : MonoBehaviour {
 	private static void ToggleDirArrowVisibility(bool b) {
 		if (b == _dirArrowVisible) return;
 		_dirArrowVisible = b;
-		dirArrow.GetComponent<MeshRenderer>().enabled = b;
+		dirArrow.GetComponentInChildren<MeshRenderer>().enabled = b;
 	}
 
 	public static void TellClicked() {
@@ -186,10 +186,12 @@ public class Tutorial : MonoBehaviour {
 					if (Vector3.Angle(coinDirVec, myDirVec) > fov / 2f) {
 						ToggleDirArrowVisibility(true);
                         dirArrow.transform.LookAt(coinPos);
+                        /*
                         Vector3 eulerAngles = dirArrow.transform.localEulerAngles;
                         eulerAngles.x += 180f;
                         eulerAngles.z = 90f;
                         dirArrow.transform.localEulerAngles = eulerAngles;
+                        */
 					}
 					else {
 						ToggleDirArrowVisibility(false);

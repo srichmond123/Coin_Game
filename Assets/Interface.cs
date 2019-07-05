@@ -30,7 +30,7 @@ public class Interface : MonoBehaviour {
 		SpeedIncrement = 2.5f,
 		SpeedDecrement = 4f;
 
-	private const int CountdownTimeMs = 10 * 1000;
+	public const int CountdownTimeMs = 10 * 1000;
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
@@ -56,20 +56,15 @@ public class Interface : MonoBehaviour {
 	public static List<string> permissibleIndividuals;
 	public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
 	public static int MyScore = 0; //Score is directly related to bumping into a coin, doesn't have to do with sharing.
+	public static int ScoreSum = 0;
 	private static Vector3 MapScale, MapOrigin;
 
-	private Transform blueBucketTransform, greenBucketTransform, redBucketTransform;
 	//public GameObject arrowOfVirtue;
-	private static bool flying = false;
+	public static bool flying = false;
 	private static bool slowingDown = false;
-	private float currBoost = 1f;
-	//private float boostTime = 0f;
-	private float timeSpentSlowingDown = 0f;
-	//private float oldBoost = -1f;
 	public static Buckets buckets;
-	private float luminosity = 0.2f;
 	public static Light light;
-	private static Transform _interfaceTransform, _centerEyeTransform;
+	private static Transform _interfaceTransform, _centerEyeTransform, _leftHandTransform, _rightHandTransform;
 	private static Camera _camera;
 	public static TextMeshPro scoreText, timeText, lobbyText, countdownText;
 	public static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
@@ -80,13 +75,14 @@ public class Interface : MonoBehaviour {
 	private static bool _inLobby = false;
 	public static bool TutorialBoundarySet = false;
 	private static bool _inCountdown = false;
-	private static int _elapsedMs = 0;
+	public static int _elapsedMs = 0;
 	private static float _boundaryX, _boundaryZ, _boundarySlope;
 	private static bool _boundaryBlockBelowLine;
 	private static LoadingCircle _loadingCircle;
-	private static int RoundNum = 0; //1, 2, or 3 for simplicity - Socket start emission will incr. this to 1 at first
+	public static int RoundNum = 0; //1, 2, or 3 for simplicity - Socket start emission will incr. this to 1 at first
 	private static string PrevRoundScoreText = "";
 	public static MeshRenderer LeaderBoard;
+	public static float _unityTime = 0f;
 
 	private void Start() {
 		DisableVR = _disableVR;
@@ -118,6 +114,8 @@ public class Interface : MonoBehaviour {
 		light = GameObject.Find("My Light").GetComponent<Light>();
 		_interfaceTransform = transform; //Since there's only one of these this is fine
 		_centerEyeTransform = GameObject.Find("CenterEyeAnchor").transform;
+		_leftHandTransform = GameObject.Find("LeftHandAnchor").transform;
+		_rightHandTransform = GameObject.Find("RightHandAnchor").transform;
 		_camera = _centerEyeTransform.GetComponent<Camera>();
 		scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshPro>();
 		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
@@ -143,20 +141,7 @@ public class Interface : MonoBehaviour {
 		_loadingCircle = GameObject.Find("LoadingCircle").GetComponent<LoadingCircle>();
 		_loadingCircle.Set(false);
 		countdownText.enabled = false;
-
-		blueBucketTransform = GameObject.Find("bucket").transform;
-		greenBucketTransform = GameObject.Find("bucket (1)").transform;
-		redBucketTransform = GameObject.Find("bucket (2)").transform;
 	}
-
-	/*
-	private void OnDestroy() {
-		if (socket.enabled) { //Means player is quitting early, must notify others
-			socket.Emit("quit");
-		}
-	}
-	*/
-
 
 	public static void ToggleLobby(bool inLobby) {
 		_inLobby = inLobby;
@@ -246,6 +231,12 @@ public class Interface : MonoBehaviour {
 			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "
 			                     + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
 		}
+		else { //Write to data collector:
+            int gameNum = int.Parse(res["gameNum"]);
+            int coinsPer = int.Parse(res["coinsPer"]);
+            DataCollector.SetPath(gameNum);
+            DataCollector.WriteMetaData(RoundNum, coinsPer);
+		}
 	}
 
 	private void HandleNewConnection(SocketIOEvent e) {
@@ -260,6 +251,9 @@ public class Interface : MonoBehaviour {
 		_inCountdown = state;
 		timeText.enabled = !state;
 		countdownText.enabled = state;
+		if (!state) {
+			_unityTime = 0f;
+		}
 	}
 
 	private void ShowGenerosity(Friend friend) {
@@ -312,7 +306,7 @@ public class Interface : MonoBehaviour {
 
 		throw new Exception("Friend " + id + " not found.");
 	}
-
+	
 	public static void UpdateScore() {
 		int blueScore = 0, redScore = 0, greenScore = MyScore;
 		foreach (Friend f in friends) {
@@ -329,18 +323,18 @@ public class Interface : MonoBehaviour {
 			blueScore = Tutorial.BlueScore;
 			greenScore = Tutorial.MyScore;
 		}
+		
+		ScoreSum = redScore + blueScore + greenScore;
 
-		int scoreSum = redScore + blueScore + greenScore;
-
-		scoreText.text = scoreSum + "/" + Goal;
+		scoreText.text = ScoreSum + "/" + Goal;
 		if (!MulticolorBar) {
-			ModifyBarTransform(scoreBar, scoreSum, 0f);
+			ModifyBarTransform(scoreBar, ScoreSum, 0f);
 		}
 		else {
 			float blueWid = ModifyBarTransform(blueBar, blueScore, 0);
 			float redWid = ModifyBarTransform(redBar, redScore, blueWid);
 			float greenWid = ModifyBarTransform(greenBar, greenScore, blueWid + redWid);
-			ModifyBarTransform(emptyBar, Goal - scoreSum, blueWid + redWid + greenWid);
+			ModifyBarTransform(emptyBar, Goal - ScoreSum, blueWid + redWid + greenWid);
 		}
 	}
 
@@ -473,6 +467,10 @@ public class Interface : MonoBehaviour {
 			
 		} else {
 			AdjustMyLight();
+			if (!_inCountdown && !_inLobby && !Tutorial.InTutorial) {
+				_unityTime += Time.deltaTime;
+				DataCollector.WriteMovement();
+			}
 			if (!DisableVR) {
 				if (OVRInput.GetDown(OVRInput.RawButton.A)) {
 					//A button pressed, right controller:
@@ -483,7 +481,6 @@ public class Interface : MonoBehaviour {
 				}
 				else if (OVRInput.GetUp(OVRInput.RawButton.A)) {
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
-						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
 						slowingDown = true;
 					}
 				}
@@ -500,7 +497,6 @@ public class Interface : MonoBehaviour {
 				else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) buckets.HandleClick(Color.blue);
 			}
 			else {
-				//_displayCoins();
 				if (Input.GetKey(KeyCode.RightArrow)) {
 					transform.localEulerAngles += Vector3.up;
 				}
@@ -630,10 +626,29 @@ public class Interface : MonoBehaviour {
 
 	public static Vector3 GetMyForward() {
 		return _centerEyeTransform.forward;
-		//return _interfaceTransform.GetChild(0).GetChild(0).forward;
 	}
 
 	public static Vector3 GetMyRight() {
 		return _centerEyeTransform.right;
+	}
+
+	public static Vector3 HeadPosition() {
+		return _centerEyeTransform.localPosition;
+	}
+
+	public static Vector3 LeftHandPosition() {
+		return _leftHandTransform.localPosition;
+	}
+
+	public static Vector3 RightHandPosition() {
+		return _rightHandTransform.localPosition;
+	}
+
+	public static Vector3 LeftHandRotation() {
+		return _leftHandTransform.localEulerAngles;
+	}
+
+	public static Vector3 RightHandRotation() {
+		return _rightHandTransform.localEulerAngles;
 	}
 }
