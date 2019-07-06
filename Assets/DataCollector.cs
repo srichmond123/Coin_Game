@@ -54,8 +54,8 @@ public class DataCollector : MonoBehaviour {
 		}
 		string[] line = new [] {
 			DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
-			Interface._unityTime.ToString(),
 			(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
+			Interface._unityTime.ToString(),
 		};
 
 		line = Concat(line, _getStandard());
@@ -102,8 +102,8 @@ public class DataCollector : MonoBehaviour {
 
 		string[] line = new [] {
 			DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
-			Interface._unityTime.ToString(),
 			(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
+			Interface._unityTime.ToString(),
 			evt,
 			toWhom,
 		};
