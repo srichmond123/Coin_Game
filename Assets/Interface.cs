@@ -30,7 +30,7 @@ public class Interface : MonoBehaviour {
 		SpeedIncrement = 2.5f,
 		SpeedDecrement = 4f;
 
-	public const int CountdownTimeMs = 10 * 1000;
+	public static int CountdownTimeMs = 10 * 1000;
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
@@ -212,9 +212,8 @@ public class Interface : MonoBehaviour {
 		buckets.Hide();
 		flying = false;
 		slowingDown = false;
-
-		//TODO initial rotation (random or facing forward always)
-		light.range = InitialRange;
+		
+		light.range = InitialRange = e.data["initialRange"].f;
 		setInitialPositions = false;
 		UpdateScore();
 
@@ -230,6 +229,8 @@ public class Interface : MonoBehaviour {
 		if (RoundNum > 1) { //Tell previous score in countdown waiting room:
 			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "
 								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
+			//Since round 1 has finished, get break MS from server:
+			CountdownTimeMs = (int) e.data["timeBetweenRounds"].f;
 		}
 		else { //Write to data collector:
 			int gameNum = int.Parse(res["gameNum"]);
