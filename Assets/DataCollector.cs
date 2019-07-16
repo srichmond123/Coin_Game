@@ -169,9 +169,9 @@ public class DataCollector : MonoBehaviour {
 	}
 
 	//User id, timestamp of start, topology, Goal, coins per, min range, range decrease, range increase;
-	public static void WriteMetaData(int round, int coinsPer) {
+	public static void WriteMetaData(int coinsPer) {
 		if (!_path.Equals("")) { //Path Data/Game_X must have been set already:
-			string writeTo = _path + "Round_" + round + "/MetaData.csv";
+			string writeTo = _path + "MetaData.csv";
 			string[] head = new [] {
 				"My ID", 
 				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",

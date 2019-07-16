@@ -369,7 +369,7 @@ public class Interface : MonoBehaviour {
 			}
 			buckets.Show();
 			buckets.Hide();
-			DataCollector.WriteMetaData(RoundNum, CoinsPer);
+			DataCollector.WriteMetaData(CoinsPer);
 		}
 		else {
 			if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
