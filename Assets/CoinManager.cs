@@ -135,7 +135,9 @@ public class CoinManager : MonoBehaviour {
 		buckets.Handle();
 		Interface.MyScore++;
 		Interface.UpdateScore();
-		DataCollector.WriteEvent("collect", "");
+		if (!Tutorial.InTutorial) {
+			DataCollector.WriteEvent("collect", "");
+		}
 	}
 
 	// Update is called once per frame

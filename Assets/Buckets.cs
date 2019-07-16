@@ -174,7 +174,7 @@ public class Buckets : MonoBehaviour {
 								socket.Emit("give", new JSONObject(dict));
 								friend.OtherCoins++;
 								PlaySound();
-								DataCollector.WriteEvent("give", friend.GetId());
+								DataCollector.WriteEvent("give", DataCollector.ColorName(friend.GetColor()));
 							}
 							else {
 								return;

@@ -30,7 +30,7 @@ public class Interface : MonoBehaviour {
 		SpeedIncrement = 2.5f,
 		SpeedDecrement = 4f;
 
-	public static int CountdownTimeMs = 10 * 1000;
+	public static int CountdownTimeMs = 10 * 1000, CoinsPer = 40;
 
 	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
@@ -234,9 +234,8 @@ public class Interface : MonoBehaviour {
 		}
 		else { //Write to data collector:
 			int gameNum = int.Parse(res["gameNum"]);
-			int coinsPer = int.Parse(res["coinsPer"]);
+			CoinsPer = int.Parse(res["coinsPer"]);
 			DataCollector.SetPath(gameNum);
-			DataCollector.WriteMetaData(RoundNum, coinsPer);
 		}
 	}
 
@@ -307,6 +306,16 @@ public class Interface : MonoBehaviour {
 
 		throw new Exception("Friend " + id + " not found.");
 	}
+
+	public static Friend GetFriendByColor(Color col) {
+		foreach (Friend f in friends) {
+			if (Buckets.CompareRGB(f.GetColor(), col)) {
+				return f;
+			}
+		}
+
+		throw new Exception(col.ToString() + " friend not found");
+	}
 	
 	public static void UpdateScore() {
 		int blueScore = 0, redScore = 0, greenScore = MyScore;
@@ -360,6 +369,7 @@ public class Interface : MonoBehaviour {
 			}
 			buckets.Show();
 			buckets.Hide();
+			DataCollector.WriteMetaData(RoundNum, CoinsPer);
 		}
 		else {
 			if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {

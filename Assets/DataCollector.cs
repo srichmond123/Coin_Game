@@ -28,6 +28,8 @@ public class DataCollector : MonoBehaviour {
 				"My points",
 				"Team points",
 				"My brightness",
+				"Blue brightness",
+				"Red brightness",
 				"Head x pos",
 				"Head y pos",
 				"Head z pos",
@@ -71,10 +73,12 @@ public class DataCollector : MonoBehaviour {
 				"Server time (milliseconds)",
 				"Game engine time (seconds)",
 				"Action", //collect, give, start swimming, or stop swimming
-				"To whom", //ID or blank
+				"To whom", //color or ""
 				"My points",
 				"Team points",
 				"My brightness",
+				"Blue brightness",
+				"Red brightness",
 				"Head x pos",
 				"Head y pos",
 				"Head z pos",
@@ -137,7 +141,10 @@ public class DataCollector : MonoBehaviour {
 		Vector3 leftRotation = Interface.LeftHandRotation();
 
 		return new[] {
-			Interface.MyScore.ToString(), Interface.ScoreSum.ToString(), Interface.light.range.ToString(),
+			Interface.MyScore.ToString(), Interface.ScoreSum.ToString(), 
+			Interface.light.range.ToString(),
+			Interface.GetFriendByColor(Color.blue).GetRange().ToString(),
+			Interface.GetFriendByColor(Color.red).GetRange().ToString(),
 			headPosition.x.ToString(), headPosition.y.ToString(), headPosition.z.ToString(),
 			headRotation.x.ToString(), headRotation.y.ToString(), headRotation.z.ToString(),
 			mapPosition.x.ToString(), mapPosition.y.ToString(), mapPosition.z.ToString(),
@@ -149,6 +156,18 @@ public class DataCollector : MonoBehaviour {
 		};
 	}
 
+	public static string ColorName(Color c) {
+		if (Buckets.CompareRGB(c, Color.red)) {
+			return "red";
+		}
+
+		if (Buckets.CompareRGB(c, Color.blue)) {
+			return "blue";
+		}
+		
+        return "white";
+	}
+
 	//User id, timestamp of start, topology, Goal, coins per, min range, range decrease, range increase;
 	public static void WriteMetaData(int round, int coinsPer) {
 		if (!_path.Equals("")) { //Path Data/Game_X must have been set already:
@@ -156,6 +175,8 @@ public class DataCollector : MonoBehaviour {
 			string[] head = new [] {
 				"My ID", 
 				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
+				"Blue ID",
+				"Red ID",
 				"Can send to",
 				"Goal",
 				"Coins per player",
@@ -164,10 +185,18 @@ public class DataCollector : MonoBehaviour {
 				"Range increase",
 			};
 			_writeWords(writeTo, head);
+			string permissibleColors = "";
+			foreach (string id in Interface.permissibleIndividuals) {
+				string colName = ColorName(Interface.GetFriendById(id).GetColor());
+				if (!permissibleColors.Equals("")) permissibleColors += " and ";
+				permissibleColors += colName;
+			}
 			string[] content = new [] {
 				Interface.MyId,
 				DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
-				String.Join<string>(" and ", Interface.permissibleIndividuals),
+				Interface.GetFriendByColor(Color.blue).GetId(),
+				Interface.GetFriendByColor(Color.red).GetId(),
+				permissibleColors,
 				Interface.Goal.ToString(),
 				coinsPer.ToString(),
 				Interface.MinRange.ToString(),
