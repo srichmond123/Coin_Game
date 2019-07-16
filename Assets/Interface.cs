@@ -102,7 +102,7 @@ public class Interface : MonoBehaviour {
 		//TODO hard set since this doesn't work:
 		/*
 		socket.url = Release
-			? "ws://red-doright-23845.herokuapp.com/socket.io/?EIO=4&transport=websocket"
+			? "ws://vr-coin-server.herokuapp.com/socket.io/?EIO=4&transport=websocket"
 			: "ws://127.0.0.1:4001/socket.io/?EIO=4&transport=websocket";
 			*/
 			

@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 public class WakeServer : MonoBehaviour {
 	private string url;
 	void Start() {
-		url = GameObject.Find("OVRCameraRig").GetComponent<Interface>()._release ? "https://red-doright-23845.herokuapp.com" : "https://google.com";
+		url = GameObject.Find("OVRCameraRig").GetComponent<Interface>()._release ? "https://vr-coin-server.herokuapp.com" : "https://google.com";
 		StartCoroutine(GetRequest(url));
 	}
 
