@@ -1,6 +1,0 @@
-Heart rate
-GSR
-EOG
-Stress:
-	Blood pressure
-	
