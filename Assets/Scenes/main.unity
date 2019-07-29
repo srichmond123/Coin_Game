@@ -6874,8 +6874,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fefa0f772c89e84479b866be5e8fed52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _disableVR: 1
-  _release: 0
+  _disableVR: 0
+  _release: 1
 --- !u!1 &2032451629
 GameObject:
   m_ObjectHideFlags: 0
