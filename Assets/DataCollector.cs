@@ -5,7 +5,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using Directory = UnityEngine.Windows.Directory;
+using Directory = System.IO.Directory;
 
 public class DataCollector : MonoBehaviour {
 	private static string _path = "";
