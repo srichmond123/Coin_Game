@@ -69,7 +69,7 @@ public class Boundaries : MonoBehaviour {
 			inst.transform.localPosition = GetRandomPositionOnMap(12f, 15f);
 			sceneryInstances.Add(inst);
 		}
-    }
+	}
 
 	public Vector3 Outside(Vector3 position) {
 		float terrainY = terrainScript.GetHeightAt(position) + terrainScript.transform.localPosition.y;

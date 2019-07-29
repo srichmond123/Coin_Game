@@ -63,12 +63,12 @@ public class Tutorial : MonoBehaviour {
 	private static GameObject
 		RightTriggerArrow,
 		RightTriggerHighlight,
-		LeftTriggerArrow,
-		LeftTriggerHighlight,
+		XButtonArrow,
+		XButtonHighlight,
 		AArrow,
 		BArrow,
 		BHighlight; /*
-					 * 3 buttons (left trig, right trig, B) for giving coins will be color-highlighted.
+					 * 3 buttons (X, right trig, B) for giving coins will be color-highlighted.
 					 * The fly button (A) just needs an arrow
 					 */
 
@@ -125,13 +125,13 @@ public class Tutorial : MonoBehaviour {
 
 		foreach (Transform child in leftAnchor.transform) {
 			switch (child.name) {
-				case "LeftTriggerHighlight":
-					LeftTriggerHighlight = child.gameObject;
-					LeftTriggerHighlight.SetActive(false);
+				case "XButtonHighlight":
+					XButtonHighlight = child.gameObject;
+					XButtonHighlight.SetActive(false);
 					break;
-				case "LeftTriggerArrow":
-					LeftTriggerArrow = child.gameObject;
-					LeftTriggerArrow.SetActive(false);
+				case "XButtonArrow":
+					XButtonArrow = child.gameObject;
+					XButtonArrow.SetActive(false);
 					break;
 			}
 		}
@@ -265,8 +265,8 @@ public class Tutorial : MonoBehaviour {
 		coinManager._destroyAll();
 		RightTriggerArrow.SetActive(true);
 		RightTriggerHighlight.SetActive(false);
-		LeftTriggerArrow.SetActive(false);
-		LeftTriggerHighlight.SetActive(false);
+		XButtonArrow.SetActive(false);
+		XButtonHighlight.SetActive(false);
 		AArrow.SetActive(false);
 		BArrow.SetActive(false);
 		BHighlight.SetActive(false);
@@ -366,14 +366,14 @@ public class Tutorial : MonoBehaviour {
 			case ShareBlue: {
 				MyScore = 2;
 				AArrow.SetActive(false);
-				LeftTriggerArrow.SetActive(true);
-				LeftTriggerHighlight.SetActive(true);
+				XButtonArrow.SetActive(true);
+				XButtonHighlight.SetActive(true);
 				Interface.UpdateScore();
 				break;
 			}
 
 			case CollectThirdTime: {
-				LeftTriggerArrow.SetActive(false);
+				XButtonArrow.SetActive(false);
 				AArrow.SetActive(true);
 				SpawnCoin(Color.green, offset: -0.5f);
 				break;
@@ -515,7 +515,7 @@ public class Tutorial : MonoBehaviour {
 		"You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
 		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
 		
-		"Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing the trigger " +
+		"Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing X " +
 		"on your <b>left</b> hand:",
 		
 		"Try swimming to the coin in front of you again by pressing and holding A:",
@@ -567,11 +567,11 @@ public class Tutorial : MonoBehaviour {
 		helpArrow.GetComponent<MeshRenderer>().enabled = false;
 		
 		RightTriggerArrow.SetActive(false);
-		LeftTriggerArrow.SetActive(false);
+		XButtonArrow.SetActive(false);
 		AArrow.SetActive(false);
 		BArrow.SetActive(false);
 		RightTriggerHighlight.SetActive(true);
-		LeftTriggerHighlight.SetActive(true);
+		XButtonHighlight.SetActive(true);
 		BHighlight.SetActive(true);
 		
 		HelpText.enabled = false;
