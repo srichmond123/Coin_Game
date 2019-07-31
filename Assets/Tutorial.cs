@@ -97,8 +97,8 @@ public class Tutorial : MonoBehaviour {
 		dirArrow = GameObject.Find("DirArrow");
 		dirArrow.GetComponentInChildren<MeshRenderer>().enabled = false;
 
-		GameObject rightAnchor = GameObject.Find("RightHandAnchor/RightControllerAnchor");
-		GameObject leftAnchor = GameObject.Find("LeftHandAnchor/LeftControllerAnchor");
+		GameObject rightAnchor = GameObject.Find("RightHandAnchor");
+		GameObject leftAnchor = GameObject.Find("LeftHandAnchor");
 		foreach (Transform child in rightAnchor.transform) {
 			switch (child.name) {
 				case "BButtonHighlight":

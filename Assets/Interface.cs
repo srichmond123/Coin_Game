@@ -505,7 +505,7 @@ public class Interface : MonoBehaviour {
 					}
 				}
 				else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
-				else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) buckets.HandleClick(Color.blue);
+				else if (OVRInput.GetDown(OVRInput.RawButton.X)) buckets.HandleClick(Color.blue);
 			}
 			else {
 				if (Input.GetKey(KeyCode.RightArrow)) {
