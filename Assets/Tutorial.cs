@@ -461,7 +461,7 @@ public class Tutorial : MonoBehaviour {
 	private static void SpawnWhales() {
 		GameObject redInst = Instantiate(_redWhalePrefab);
 		Vector3 forwardVec = Interface.GetMyForward();
-		forwardVec.y = 0.4f; //eye level
+		forwardVec.y = 0.2f; //eye level
 		redInst.transform.localPosition = Interface.GetMyPosition() + forwardVec * 8f + 2.5f * Interface.GetMyRight();
 		redInst.transform.localRotation = Interface.GetMyRotation();
 		redInst.transform.Rotate(Vector3.up, 45f);

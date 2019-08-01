@@ -26,7 +26,7 @@ public class Interface : MonoBehaviour {
 		OtherRangeIncrease = 22f, 
 		ConstDecrease = 2.0f, 
 		InitialRange = 80f, 
-		MaxSpeed = 4f, 
+		MaxSpeed = 5.5f,
 		SpeedIncrement = 2.5f,
 		SpeedDecrement = 4f;
 
