@@ -215,12 +215,12 @@ public class DataCollector : MonoBehaviour {
 		}
 
 		write += "\n";
-		_streamWriter.WriteLine(write);
+		_streamWriter.Write(write);
 		_streamWriter.Close();
 	}
 
 	public static void SetPath(int gameNum) {
-		_path = "Data/";
+		_path = Application.persistentDataPath + "/Data/";
 		if (!Directory.Exists(_path)) { //If first game ever:
 			Directory.CreateDirectory(_path);
 		}

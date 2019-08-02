@@ -84,6 +84,9 @@ public class Interface : MonoBehaviour {
 	public static MeshRenderer LeaderBoard;
 	public static float _unityTime = 0f;
 
+	private static GameObject _RLaser, _LLaser;
+	private static bool _lasersVisible = true;
+
 	private void Start() {
 		DisableVR = _disableVR;
 		Release = _release;
@@ -141,6 +144,19 @@ public class Interface : MonoBehaviour {
 		_loadingCircle = GameObject.Find("LoadingCircle").GetComponent<LoadingCircle>();
 		_loadingCircle.Set(false);
 		countdownText.enabled = false;
+
+		_RLaser = GameObject.Find("RightHandAnchor/Laser");
+		_LLaser = GameObject.Find("LeftHandAnchor/Laser");
+		ToggleLasers(false);
+	}
+
+	public static void ToggleLasers(bool visible) {
+		//_LLaser.SetActive(visible); //Only right for now
+		if (visible != _lasersVisible) {
+			_RLaser.GetComponent<MeshRenderer>().enabled = visible;
+			_RLaser.GetComponent<BoxCollider>().center += Vector3.up * (visible ? 100f : -100f);
+			_lasersVisible = visible;
+		}
 	}
 
 	public static void ToggleLobby(bool inLobby) {
@@ -253,6 +269,9 @@ public class Interface : MonoBehaviour {
 		countdownText.enabled = state;
 		if (!state) {
 			_unityTime = 0f;
+			flying = false;
+			speed = 0f;
+			slowingDown = false;
 		}
 	}
 
@@ -487,7 +506,9 @@ public class Interface : MonoBehaviour {
 					//A button pressed, right controller:
 					//Fly(speed * Time.deltaTime);
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
-						bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						flying = true;
+						slowingDown = false;
 					}
 				}
 				else if (OVRInput.GetUp(OVRInput.RawButton.A)) {
@@ -497,15 +518,21 @@ public class Interface : MonoBehaviour {
 				}
 
 				if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger)) {
+					/*
 					if (Tutorial.InTutorial && Tutorial.CurrStep <= Tutorial.ShowBucketsStep) {
 						Tutorial.TellClicked();
 					}
 					else {
 						buckets.HandleClick(Color.red);
 					}
+					*/
+					buckets.HandleClick(rightHand: true);
+				} else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) {
+					//buckets.HandleClick(rightHand: false);
 				}
-				else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
-				else if (OVRInput.GetDown(OVRInput.RawButton.X)) buckets.HandleClick(Color.blue);
+
+				//else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
+				//else if (OVRInput.GetDown(OVRInput.RawButton.X)) buckets.HandleClick(Color.blue);
 			}
 			else {
 				if (Input.GetKey(KeyCode.RightArrow)) {
@@ -526,7 +553,14 @@ public class Interface : MonoBehaviour {
 
 				if (Input.GetKeyDown(KeyCode.S)) {
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
-						bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						flying = true;
+						slowingDown = false;
+					}
+				} 
+				else if (Input.GetKeyUp(KeyCode.S)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						slowingDown = true;
 					}
 				}
 				if (Input.GetKeyDown(KeyCode.E)) {
@@ -539,6 +573,8 @@ public class Interface : MonoBehaviour {
 				}
 				else if (Input.GetKeyDown(KeyCode.W)) buckets.HandleClick(Color.green);
 				else if (Input.GetKeyDown(KeyCode.Q)) buckets.HandleClick(Color.blue);
+				
+				if (Input.GetKeyDown(KeyCode.R)) buckets.HandleClick(true);
 			}
 
 			if (flying) {

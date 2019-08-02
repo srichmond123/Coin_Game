@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using OculusSampleFramework;
 using OVR.OpenVR;
@@ -13,6 +14,7 @@ public class Buckets : MonoBehaviour {
 	private bool colorsInitialized = false;
 	private GameObject crossInstance;
 	private AudioSource giveSound;
+	private bool laserTouching = false;
 	void Start() {
 		GameObject sockObject = GameObject.Find("SocketIO");
 		socket = sockObject.GetComponent<SocketIOComponent>();
@@ -38,6 +40,7 @@ public class Buckets : MonoBehaviour {
 	}
 	
 	public void Hide() {
+		Interface.ToggleLasers(false);
 		foreach (Transform child in transform) {
 			Color col = GetBucketColor(child);
 			col.a = 0.08f;
@@ -51,6 +54,7 @@ public class Buckets : MonoBehaviour {
 	}
 
 	private void SetChildColor(Transform t, Color c) {
+		t.GetComponent<Detector>().Color = c;
 		foreach (Transform child in t) {
 			if (child.name.Equals("Tube01")) {
 				Material m = child.GetComponent<MeshRenderer>().materials[0];
@@ -60,6 +64,7 @@ public class Buckets : MonoBehaviour {
 	}
 
 	public void Show() {
+		Interface.ToggleLasers(true);
 		int idx = 0;
 		foreach (Transform child in transform) {
 			//child.gameObject.SetActive(true);
@@ -154,6 +159,20 @@ public class Buckets : MonoBehaviour {
 
 	public static bool CompareRGB(Color a, Color b) {
 		return a.r.Equals(b.r) && a.g.Equals(b.g) && a.b.Equals(b.b);
+	}
+
+	public void HandleClick(bool rightHand) {
+		foreach (Transform t in transform) {
+			Detector detector = t.GetComponent<Detector>();
+			if (rightHand ? detector.RCollided : detector.LCollided) {
+				HandleClick(detector.Color);
+				return;
+			}
+		}
+		//Didn't hit a bucket, but might be in tutorial:
+		if (Tutorial.InTutorial) {
+			Tutorial.TellClicked();
+		}
 	}
 
 	public void HandleClick(Color c) {

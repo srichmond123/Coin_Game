@@ -10,10 +10,10 @@ public class Boundaries : MonoBehaviour {
 	private Vector3 origin = Vector3.one * -1000f, scale = Vector3.one * Mathf.Infinity;
 	private TerrainScript terrainScript;
 	public const float Buffer = 1.08f; //Collision buffer (so user never goes through red boundaries)
-	private int NumFish => 23;
-	private int NumFloatingParticles => 20;
-	private int NumBubbles => 40;
-	private int NumJellyfish => 14;
+	private int NumFish => 11;
+	private int NumFloatingParticles => 6;
+	private int NumBubbles => 20;
+	private int NumJellyfish => 7;
 	public GameObject fishPrefab, floatingParticles, bubblesPrefab, jellyPrefab;
 	private List<GameObject> sceneryInstances; //To destroy at each round
 	void Start() {

@@ -163,7 +163,7 @@ public class Tutorial : MonoBehaviour {
 				EndTutorial();
 			}
 			
-			if (Input.GetKeyDown(KeyCode.R)){
+			if (Input.GetKeyDown(KeyCode.Tilde)){
 				StartOver();
 			}
 
