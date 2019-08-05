@@ -184,6 +184,7 @@ public class Interface : MonoBehaviour {
 								 "Thank you for your participation.";
 		}
 
+		DataCollector.FlushAll();
 		countdownText.text = PrevRoundScoreText;
 	}
 
@@ -241,6 +242,8 @@ public class Interface : MonoBehaviour {
 		
 		ToggleLobby(false);
 		ToggleCountdown(true);
+		flying = false;
+		slowingDown = false;
 
 		if (RoundNum > 1) { //Tell previous score in countdown waiting room:
 			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "

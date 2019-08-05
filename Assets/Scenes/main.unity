@@ -337,7 +337,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 32fbc8bcebb64584da5868aeeb086cda, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 32fbc8bcebb64584da5868aeeb086cda, type: 3}
       propertyPath: m_Layer
@@ -753,7 +753,7 @@ Light:
   serializedVersion: 9
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Intensity: 1.4
   m_Range: 10
   m_SpotAngle: 60
   m_InnerSpotAngle: 1
@@ -4393,7 +4393,7 @@ Light:
   serializedVersion: 9
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Intensity: 1.4
   m_Range: 10
   m_SpotAngle: 60
   m_InnerSpotAngle: 1
@@ -8397,7 +8397,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fefa0f772c89e84479b866be5e8fed52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _disableVR: 1
+  _disableVR: 0
   _release: 1
 --- !u!1 &2032451629
 GameObject:

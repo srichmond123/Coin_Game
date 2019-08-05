@@ -349,14 +349,15 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case TryBucketsStep: {
-				RightTriggerArrow.SetActive(false);
-				BHighlight.SetActive(true);
-				BArrow.SetActive(true);
+				//RightTriggerArrow.SetActive(false);
+				//BHighlight.SetActive(true);
+				//BArrow.SetActive(true);
 				break;
 			}
 
 			case CollectSecondTime: {
-				BArrow.SetActive(false);
+				RightTriggerArrow.SetActive(false);
+				//BArrow.SetActive(false);
 				AArrow.SetActive(true);
 				SpawnCoin(Color.green, offset: -0.25f);
 				SpawnCoin(Color.blue, offset: 3f);
@@ -366,14 +367,16 @@ public class Tutorial : MonoBehaviour {
 			case ShareBlue: {
 				MyScore = 2;
 				AArrow.SetActive(false);
-				XButtonArrow.SetActive(true);
-				XButtonHighlight.SetActive(true);
+				//XButtonArrow.SetActive(true);
+				//XButtonHighlight.SetActive(true);
+				RightTriggerArrow.SetActive(true);
 				Interface.UpdateScore();
 				break;
 			}
 
 			case CollectThirdTime: {
-				XButtonArrow.SetActive(false);
+				//XButtonArrow.SetActive(false);
+				RightTriggerArrow.SetActive(false);
 				AArrow.SetActive(true);
 				SpawnCoin(Color.green, offset: -0.5f);
 				break;
@@ -382,7 +385,7 @@ public class Tutorial : MonoBehaviour {
 			case ShareRed: {
 				MyScore = 3;
 				RightTriggerArrow.SetActive(true);
-				RightTriggerHighlight.SetActive(true);
+				//RightTriggerHighlight.SetActive(true);
 				AArrow.SetActive(false);
 				Interface.UpdateScore();
 				break;
@@ -510,18 +513,19 @@ public class Tutorial : MonoBehaviour {
 		
 		"You will have the option to give the coin to either yourself (<color=green>green</color> bucket), " +
 		"or to one of your teammates. Whoever you give it to will receive a boost in their visibility.\n\n" +
-		"Try to give it to yourself by pressing B on your right controller:",
+		"Try to give it to yourself by pointing your laser at the <color=green>green</color> bucket " +
+		"and pressing your right trigger:",
 		
 		"You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
 		"swimming to and collecting one of the coins in front of you by pressing and holding A again:",
 		
-		"Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pressing X " +
-		"on your <b>left</b> hand:",
+		"Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pointing at the blue bucket " +
+		"and pressing your right trigger:",
 		
 		"Try swimming to the coin in front of you again by pressing and holding A:",
 		
-		"Now, try to give this coin to your <color=red>red</color> teammate by pressing the trigger " +
-		"on your <b>right</b> hand:",
+		"Now, try to give this coin to your <color=red>red</color> teammate by pointing and clicking " +
+		"at the red bucket:",
 		
 		"This experiment will consist of 3 rounds, where each round, you and " +
 		"your team try to earn " + Interface.Goal + " points as quickly as possible.\n\n" +
@@ -570,9 +574,9 @@ public class Tutorial : MonoBehaviour {
 		XButtonArrow.SetActive(false);
 		AArrow.SetActive(false);
 		BArrow.SetActive(false);
-		RightTriggerHighlight.SetActive(true);
-		XButtonHighlight.SetActive(true);
-		BHighlight.SetActive(true);
+		RightTriggerHighlight.SetActive(false);
+		XButtonHighlight.SetActive(false);
+		BHighlight.SetActive(false);
 		
 		HelpText.enabled = false;
 		Interface.buckets.HardSet(false);

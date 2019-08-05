@@ -9,7 +9,9 @@ using Directory = System.IO.Directory;
 
 public class DataCollector : MonoBehaviour {
 	private static string _path = "";
-	private static StreamWriter _streamWriter;
+	private static StreamWriter _streamWriter, _movementWriter; //Diff writer for movement as it's every frame
+	private static int _currRound = -1;
+	private static int _streamFlushCounter = 0;
 	void Start() {
 		
 	}
@@ -19,9 +21,12 @@ public class DataCollector : MonoBehaviour {
 	}
 
 	public static void WriteMovement() {
-		string writeTo = _path + "Round_" + Interface.RoundNum + "/Movement.csv";
-		if (!File.Exists(writeTo)) {
-			_writeWords(writeTo, new[] {
+		string writeTo = $"{_path}Round_{Interface.RoundNum}/Movement.csv";
+		if (_currRound != Interface.RoundNum || _movementWriter == null) {
+			_currRound = Interface.RoundNum;
+			_movementWriter?.Flush();
+			_movementWriter = new StreamWriter(writeTo, true);
+			_writeWords(_movementWriter, new[] {
 				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
 				"Server time (milliseconds)",
 				"Game engine time (seconds)",	
@@ -62,11 +67,11 @@ public class DataCollector : MonoBehaviour {
 
 		line = Concat(line, _getStandard());
 		
-		_writeWords(writeTo, line);
+		_writeWords(_movementWriter, line);
 	}
 
 	public static void WriteEvent(string evt, string toWhom) {
-		string writeTo = _path + "Round_" + Interface.RoundNum + "/Events.csv";
+		string writeTo = $"{_path}Round_{Interface.RoundNum}/Events.csv";
 		if (!File.Exists(writeTo)) {
 			_writeWords(writeTo, new[] {
 				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
@@ -171,7 +176,7 @@ public class DataCollector : MonoBehaviour {
 	//User id, timestamp of start, topology, Goal, coins per, min range, range decrease, range increase;
 	public static void WriteMetaData(int coinsPer) {
 		if (!_path.Equals("")) { //Path Data/Game_X must have been set already:
-			string writeTo = _path + "MetaData.csv";
+			string writeTo = $"{_path}MetaData.csv";
 			string[] head = new [] {
 				"My ID", 
 				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
@@ -209,18 +214,20 @@ public class DataCollector : MonoBehaviour {
 
 	private static void _writeWords(string filePath, string[] words) {
 		_streamWriter = new StreamWriter(filePath, true);
-		string write = "";
-		foreach (string word in words) {
-			write += word + ",";
-		}
-
-		write += "\n";
-		_streamWriter.Write(write);
+		_streamWriter.Write(string.Join(",", words) + "\n");
 		_streamWriter.Close();
 	}
 
+	private static void _writeWords(StreamWriter sw, string[] words) {
+		sw.Write(string.Join(",", words) + "\n");
+		if (++_streamFlushCounter >= 60) {
+			sw.Flush();
+			_streamFlushCounter = 0;
+		}
+	}
+
 	public static void SetPath(int gameNum) {
-		_path = Application.persistentDataPath + "/Data/";
+		_path = (Interface.Release ? (Application.persistentDataPath + "/") : "") + "Data/";
 		if (!Directory.Exists(_path)) { //If first game ever:
 			Directory.CreateDirectory(_path);
 		}
@@ -238,5 +245,9 @@ public class DataCollector : MonoBehaviour {
 		for (int i = 1; i <= 3; i++) {
 			Directory.CreateDirectory(_path + "Round_" + i);
 		}
+	}
+
+	public static void FlushAll() {
+		_movementWriter?.Flush();
 	}
 }

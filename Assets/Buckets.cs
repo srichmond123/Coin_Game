@@ -43,7 +43,7 @@ public class Buckets : MonoBehaviour {
 		Interface.ToggleLasers(false);
 		foreach (Transform child in transform) {
 			Color col = GetBucketColor(child);
-			col.a = 0.08f;
+			col.a = 0.055f;
 			SetChildColor(child, col);
 			colorsInitialized = false;
 			//child.gameObject.SetActive(false);
