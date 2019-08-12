@@ -40,13 +40,16 @@ public class Coin : MonoBehaviour {
 
 	private void OnTriggerStay(Collider other) {
 		if (!collided) {
-			if (other.gameObject.tag.Equals("MainCamera") 
-				&& Interface.MyId == id
-				&& Interface.buckets.GetCoinsHeld() < 1) {
-				parent.Collect(index);
-				collided = true;
-				if (Tutorial.InTutorial) {
-					Tutorial.NextStep();
+			if (other.gameObject.tag.Equals("MainCamera") && Interface.MyId == id) {
+				if (Interface.buckets.GetCoinsHeld() < 1) {
+                    parent.Collect(index);
+                    collided = true;
+                    if (Tutorial.InTutorial) {
+                        Tutorial.NextStep();
+                    }
+                }
+				else { // Player just collided with green coin while holding a coin to share:
+					Interface.ToggleTellShareCoin(true);
 				}
 			}
 		}

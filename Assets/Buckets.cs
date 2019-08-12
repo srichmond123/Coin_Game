@@ -41,6 +41,7 @@ public class Buckets : MonoBehaviour {
 	
 	public void Hide() {
 		Interface.ToggleLasers(false);
+		Interface.ToggleTellShareCoin(false);
 		foreach (Transform child in transform) {
 			Color col = GetBucketColor(child);
 			col.a = 0.055f;

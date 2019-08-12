@@ -66,7 +66,7 @@ public class Interface : MonoBehaviour {
 	public static Light light;
 	private static Transform _interfaceTransform, _centerEyeTransform, _leftHandTransform, _rightHandTransform;
 	private static Camera _camera;
-	public static TextMeshPro scoreText, timeText, lobbyText, countdownText;
+	public static TextMeshPro scoreText, timeText, lobbyText, countdownText, tellShareText;
 	public static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
 	private TerrainScript terrainScript;
@@ -124,6 +124,7 @@ public class Interface : MonoBehaviour {
 		timeText = GameObject.Find("TimeText").GetComponent<TextMeshPro>();
 		lobbyText = GameObject.Find("LobbyText").GetComponent<TextMeshPro>();
 		countdownText = GameObject.Find("CountdownText").GetComponent<TextMeshPro>();
+		tellShareText = GameObject.Find("TellShareText").GetComponent<TextMeshPro>();
 		scoreBar = GameObject.Find("Bar").transform;
 		redBar = GameObject.Find("RedBar").transform;
 		blueBar = GameObject.Find("BlueBar").transform;
@@ -148,6 +149,7 @@ public class Interface : MonoBehaviour {
 		_RLaser = GameObject.Find("RightHandAnchor/Laser");
 		_LLaser = GameObject.Find("LeftHandAnchor/Laser");
 		ToggleLasers(false);
+		ToggleTellShareCoin(false);
 	}
 
 	public static void ToggleLasers(bool visible) {
@@ -664,6 +666,10 @@ public class Interface : MonoBehaviour {
 			currPosition.z = myZ;
 			t.localPosition = currPosition;
 		}
+	}
+
+	public static void ToggleTellShareCoin(bool visible) {
+		tellShareText.enabled = visible;
 	}
 
 	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:

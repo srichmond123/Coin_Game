@@ -183,15 +183,10 @@ public class Tutorial : MonoBehaviour {
 					Vector3 myPos = Interface.GetMyPosition();
 					Vector3 myDirVec = Interface.GetMyForward();
 					Vector3 coinDirVec = coinPos - myPos;
-					if (Vector3.Angle(coinDirVec, myDirVec) > fov / 2f) {
+					if (Vector3.Distance(Interface.GetMyPosition(), coinPos) > 10f
+					    || Vector3.Angle(coinDirVec, myDirVec) > fov / 2f) {
 						ToggleDirArrowVisibility(true);
 						dirArrow.transform.LookAt(coinPos);
-						/*
-						Vector3 eulerAngles = dirArrow.transform.localEulerAngles;
-						eulerAngles.x += 180f;
-						eulerAngles.z = 90f;
-						dirArrow.transform.localEulerAngles = eulerAngles;
-						*/
 					}
 					else {
 						ToggleDirArrowVisibility(false);
@@ -542,7 +537,7 @@ public class Tutorial : MonoBehaviour {
 		"teammate,\n but <b>not</b> with your <color=#0099ff>blue</color> teammate." +
 		"\n\n(Press your right trigger to continue)",
 		*/
-		"Since your team's map is limited, if you get close to the edge, you will see a wall of red fog, " +
+		"Since your team's map is limited, if you get close to the edge, you will see a wall of fog, " +
 		"like what is in front of you. You will not be able to move past it.\n\n(Press your right trigger to continue)",
 		
 		"Lastly, the top 3 scores of all previous teams in any round are shown in front.\n" +
