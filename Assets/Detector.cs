@@ -5,10 +5,9 @@ using Color = UnityEngine.Color;
 
 public class Detector : MonoBehaviour {
 	// Start is called before the first frame update
-	private bool _RCollided = false, _LCollided = false;
+	private bool _Collided = false;
 
-	public bool RCollided => _RCollided;
-	public bool LCollided => _LCollided;
+	public bool Collided => _Collided;
 	public Color Color { get; set; }
 	private Material _material;
 
@@ -28,24 +27,24 @@ public class Detector : MonoBehaviour {
 	private void OnTriggerEnter(Collider other) {
 		Debug.Log($"{other.tag} entered");
 		//TODO Interface -> set laser color (on Exit too)
-		if (other.tag.Equals("RLaser")) {
-			_RCollided = true;
-		} else if (other.tag.Equals("LLaser")) {
-			_LCollided = true;
+		string laserTag = Interface.RightHandInUse ? "RLaser" : "LLaser";
+		if (other.tag.Contains(laserTag)) {
+			_Collided = true;
 		}
 		else {
 			return;
 		}
-		
-		_material.SetColor("_EmissionColor", Color.gray);
+
+		if (!_material.color.a.Equals(Buckets.NoShareAllowedAlbedo)) {
+			_material.SetColor("_EmissionColor", Color.gray);
+		}
 	}
 
 	private void OnTriggerExit(Collider other) {
 		Debug.Log($"{other.tag} left");
-		if (other.tag.Equals("RLaser")) {
-			_RCollided = false;
-		} else if (other.tag.Equals("LLaser")) {
-			_LCollided = false;
+		string laserTag = Interface.RightHandInUse ? "RLaser" : "LLaser";
+		if (other.tag.Contains(laserTag)) {
+			_Collided = false;
 		}
 		else {
 			return;

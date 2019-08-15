@@ -86,6 +86,10 @@ public class Interface : MonoBehaviour {
 
 	private static GameObject _RLaser, _LLaser;
 	private static bool _lasersVisible = true;
+	private bool _reverse = false; //Flying in reverse? (pressing B/Y)
+
+	private static bool _rightHandInUse = true, _handSet = false;
+	public static bool RightHandInUse => _rightHandInUse;
 
 	private void Start() {
 		DisableVR = _disableVR;
@@ -153,10 +157,11 @@ public class Interface : MonoBehaviour {
 	}
 
 	public static void ToggleLasers(bool visible) {
-		//_LLaser.SetActive(visible); //Only right for now
 		if (visible != _lasersVisible) {
-			_RLaser.GetComponent<MeshRenderer>().enabled = visible;
+			_RLaser.GetComponent<MeshRenderer>().enabled = RightHandInUse && visible;
 			_RLaser.GetComponent<BoxCollider>().center += Vector3.up * (visible ? 100f : -100f);
+			_LLaser.GetComponent<BoxCollider>().center += Vector3.up * (visible ? 100f : -100f);
+			_LLaser.GetComponent<MeshRenderer>().enabled = !RightHandInUse && visible;
 			_lasersVisible = visible;
 		}
 	}
@@ -311,7 +316,7 @@ public class Interface : MonoBehaviour {
 	private void VirtueSignal(Friend from, Friend to) {
 		Vector3 fromVec = from.transform.localPosition;
 		Vector3 toVec = to.transform.localPosition;
-		GameObject inst = new GameObject(); //GameObject inst = Instantiate(arrowOfVirtue); 
+		GameObject inst = new GameObject(); //GameObject inst = Instantiate(arrow); 
 		inst.transform.LookAt(toVec - fromVec);
 		Vector3 currScale = inst.transform.localScale;
 		currScale.z = Vector3.Distance(fromVec, toVec) - to.transform.localScale.x * 1.5f; // Width of player objects
@@ -496,6 +501,18 @@ public class Interface : MonoBehaviour {
 		buckets.UpdateHealth();
 	}
 
+	public static OVRInput.RawButton GetButtonOne() {
+		return RightHandInUse ? OVRInput.RawButton.A : OVRInput.RawButton.X;
+	}
+	
+	public static OVRInput.RawButton GetButtonTwo() {
+		return RightHandInUse ? OVRInput.RawButton.B : OVRInput.RawButton.Y;
+	}
+	
+	public static OVRInput.RawButton GetPrimaryIndexTrigger() {
+		return RightHandInUse ? OVRInput.RawButton.RIndexTrigger : OVRInput.RawButton.LIndexTrigger;
+	}
+
 	// Update is called once per frame
 	private void Update() {
 		if (_inLobby || _inCountdown) {
@@ -507,37 +524,78 @@ public class Interface : MonoBehaviour {
 				DataCollector.WriteMovement();
 			}
 			if (!DisableVR) {
-				if (OVRInput.GetDown(OVRInput.RawButton.A)) {
+				/* // TWO HANDED CODE
+				if (OVRInput.GetDown(OVRInput.RawButton.A) || OVRInput.GetDown(OVRInput.RawButton.X)) {
 					//A button pressed, right controller:
 					//Fly(speed * Time.deltaTime);
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
 						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						_reverse = false;
 						flying = true;
 						slowingDown = false;
 					}
 				}
-				else if (OVRInput.GetUp(OVRInput.RawButton.A)) {
+				else if (OVRInput.GetUp(OVRInput.RawButton.A) && !OVRInput.Get(OVRInput.RawButton.X)
+				         || OVRInput.GetUp(OVRInput.RawButton.X) && !OVRInput.Get(OVRInput.RawButton.A)
+				         || OVRInput.GetUp(OVRInput.RawButton.B) && !OVRInput.Get(OVRInput.RawButton.Y)
+				         || OVRInput.GetUp(OVRInput.RawButton.Y) && !OVRInput.Get(OVRInput.RawButton.B)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						slowingDown = true;
+					}
+				}
+				else if (OVRInput.GetDown(OVRInput.RawButton.B) || OVRInput.GetDown(OVRInput.RawButton.Y)) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						//bool __ = flying ? slowingDown = !slowingDown : flying = true;
+						_reverse = true;
+						flying = true;
+						slowingDown = false;
+					}
+				}
+
+				if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger)) {
+					buckets.HandleClick(rightHand: true);
+				} else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) {
+					buckets.HandleClick(rightHand: false);
+				}
+
+				//else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
+				//else if (OVRInput.GetDown(OVRInput.RawButton.X)) buckets.HandleClick(Color.blue);
+				*/  // END TWO HANDED CODE
+				
+				// OVRInput.Button* instead of RawButton for hand agnostic, set RightHandInUse for tutorial instructions/arrows:
+				if (!_handSet) {
+					if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger)) {
+						Tutorial.SetPrimaryArrows(true);
+						_rightHandInUse = _handSet = true;
+					}
+					else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) {
+						Tutorial.SetPrimaryArrows(false);
+						_rightHandInUse = false;
+						_handSet = true;
+					}
+				}
+
+				if (OVRInput.GetDown(GetButtonOne())) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
+						_reverse = false;
+						flying = true;
+						slowingDown = false;
+					}
+				} else if (OVRInput.GetDown(GetButtonTwo())) {
+					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.FlyBackwardsStep || !Tutorial.InTutorial) {
+						_reverse = true;
+						flying = true;
+						slowingDown = false;
+					}
+				} else if (OVRInput.GetUp(GetButtonOne()) || OVRInput.GetUp(GetButtonTwo())) {
 					if (Tutorial.InTutorial && Tutorial.CurrStep >= Tutorial.ShowCoinsStep || !Tutorial.InTutorial) {
 						slowingDown = true;
 					}
 				}
 
-				if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger)) {
-					/*
-					if (Tutorial.InTutorial && Tutorial.CurrStep <= Tutorial.ShowBucketsStep) {
-						Tutorial.TellClicked();
-					}
-					else {
-						buckets.HandleClick(Color.red);
-					}
-					*/
-					buckets.HandleClick(rightHand: true);
-				} else if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger)) {
-					//buckets.HandleClick(rightHand: false);
+				if (OVRInput.GetDown(GetPrimaryIndexTrigger())) {
+					buckets.HandleClick();
 				}
-
-				//else if (OVRInput.GetDown(OVRInput.RawButton.B)) buckets.HandleClick(Color.green);
-				//else if (OVRInput.GetDown(OVRInput.RawButton.X)) buckets.HandleClick(Color.blue);
 			}
 			else {
 				if (Input.GetKey(KeyCode.RightArrow)) {
@@ -579,7 +637,7 @@ public class Interface : MonoBehaviour {
 				else if (Input.GetKeyDown(KeyCode.W)) buckets.HandleClick(Color.green);
 				else if (Input.GetKeyDown(KeyCode.Q)) buckets.HandleClick(Color.blue);
 				
-				if (Input.GetKeyDown(KeyCode.R)) buckets.HandleClick(true);
+				if (Input.GetKeyDown(KeyCode.R)) buckets.HandleClick();
 			}
 
 			if (flying) {
@@ -630,7 +688,7 @@ public class Interface : MonoBehaviour {
 			}
 		}
 
-		float incr = speed * Time.deltaTime;
+		float incr = _reverse ? -speed * Time.deltaTime : speed * Time.deltaTime;
 		Transform t = transform;
 		Vector3 forward = t.GetChild(0).GetChild(0).forward;
 		Vector3 localPosition = t.localPosition;

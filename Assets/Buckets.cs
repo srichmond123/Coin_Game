@@ -15,6 +15,7 @@ public class Buckets : MonoBehaviour {
 	private GameObject crossInstance;
 	private AudioSource giveSound;
 	private bool laserTouching = false;
+	public static float NoShareAllowedAlbedo => 0.1f;
 	void Start() {
 		GameObject sockObject = GameObject.Find("SocketIO");
 		socket = sockObject.GetComponent<SocketIOComponent>();
@@ -77,19 +78,13 @@ public class Buckets : MonoBehaviour {
 			else {
 				Friend friendSet = Interface.friends[idx == 0 ? 0 : 1];
 				float albedo = 1f;
-				if (!Tutorial.InTutorial) {// || idx == 0) {
+				if (!Tutorial.InTutorial) {
 					if (!Interface.permissibleIndividuals.Contains(friendSet.GetId())) {
-						/*
-						GameObject inst = Instantiate(crossPrefab, GameObject.Find("TrackingSpace").transform);
-						inst.transform.position = child.position;
-						inst.transform.Translate(new Vector3(0, 0.203f, -0.134f));
-						crossInstance = inst;
-						*/
-						albedo = 0.1f;
+						albedo = NoShareAllowedAlbedo;
 					}
 				}
 				else if (idx != 0 && Tutorial.CurrStep == Tutorial.TopologyExplanation) {
-					albedo = 0.1f;
+					albedo = NoShareAllowedAlbedo;
 				}
 
 				if (!colorsInitialized) {
@@ -162,10 +157,10 @@ public class Buckets : MonoBehaviour {
 		return a.r.Equals(b.r) && a.g.Equals(b.g) && a.b.Equals(b.b);
 	}
 
-	public void HandleClick(bool rightHand) {
+	public void HandleClick() {
 		foreach (Transform t in transform) {
 			Detector detector = t.GetComponent<Detector>();
-			if (rightHand ? detector.RCollided : detector.LCollided) {
+			if (detector.Collided) {
 				HandleClick(detector.Color);
 				return;
 			}
