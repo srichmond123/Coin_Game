@@ -49,9 +49,16 @@ public class Friend : MonoBehaviour {
 					oldRotation = t.localRotation;
 					oldTime = targetTime + (timeSinceUpdate - interval);
 				}
-				targetPosition = Pop(positionQueue, 0);
-				targetRotation = Pop(rotationQueue, 0);
-				targetTime = Pop(timestampQueue, 0);
+
+				try {
+					targetPosition = Pop(positionQueue, 0);
+					targetRotation = Pop(rotationQueue, 0);
+					targetTime = Pop(timestampQueue, 0);
+				}
+				catch (ArgumentOutOfRangeException e) {
+					//Pass, player quit, otherwise it'll fix next update
+				}
+
 				timeSinceUpdate = 0f;
 				interval = targetTime - oldTime;
 			}

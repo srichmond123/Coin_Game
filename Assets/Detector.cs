@@ -25,7 +25,6 @@ public class Detector : MonoBehaviour {
 	}
 
 	private void OnTriggerEnter(Collider other) {
-		Debug.Log($"{other.tag} entered");
 		//TODO Interface -> set laser color (on Exit too)
 		string laserTag = Interface.RightHandInUse ? "RLaser" : "LLaser";
 		if (other.tag.Contains(laserTag)) {
@@ -41,7 +40,6 @@ public class Detector : MonoBehaviour {
 	}
 
 	private void OnTriggerExit(Collider other) {
-		Debug.Log($"{other.tag} left");
 		string laserTag = Interface.RightHandInUse ? "RLaser" : "LLaser";
 		if (other.tag.Contains(laserTag)) {
 			_Collided = false;

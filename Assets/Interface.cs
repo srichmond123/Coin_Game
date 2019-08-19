@@ -32,7 +32,7 @@ public class Interface : MonoBehaviour {
 
 	public static int CountdownTimeMs = 10 * 1000, CoinsPer = 40;
 
-	public static int Goal = 30; //Default value (referenced in tutorial before server tells clients goal)
+	public static int Goal = 150; //Default value (referenced in tutorial before server tells clients goal)
 	private static bool MulticolorBar => true;
 	private const float HeightThreshold = 1.4f; //How high user can be above terrain Y
 	private static Vector3 BarOrigin;
@@ -141,6 +141,7 @@ public class Interface : MonoBehaviour {
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
 		boundaries = GameObject.Find("Boundaries").GetComponent<Boundaries>();
 
+		scoreText.text = $"0/{Goal}";
 		scoreText.enabled = false;
 		timeText.enabled = false;
 		lobbyText.enabled = false;
@@ -292,7 +293,12 @@ public class Interface : MonoBehaviour {
 		MyCoinsOwned--;
 		Dictionary<string, string> dict = new Dictionary<string, string>();
 		dict["id"] = to;
-		socket.Emit("give", new JSONObject(dict));
+		try {
+			socket.Emit("give", new JSONObject(dict));
+		}
+		catch (Exception ex) {
+			Debug.Log(ex);
+		}
 	}
 
 	private void HandleGenerosity(SocketIOEvent e) {
@@ -388,47 +394,52 @@ public class Interface : MonoBehaviour {
 	}
 
 	private void HandleUpdate(SocketIOEvent e) {
-		if (friends[0].GetId().Equals("")) { 
-			//If this is the first update, assign ids:
-			int ind = 0;
-			foreach (string key in e.data["users"].keys) {
-				if (!key.Equals(MyId)) {
-					friends[ind++].SetId(key);
+		try {
+			if (friends[0].GetId().Equals("")) { 
+				//If this is the first update, assign ids:
+				int ind = 0;
+				foreach (string key in e.data["users"].keys) {
+					if (!key.Equals(MyId)) {
+						friends[ind++].SetId(key);
+					}
 				}
+				buckets.Show();
+				buckets.Hide();
+				DataCollector.WriteMetaData(CoinsPer);
 			}
-			buckets.Show();
-			buckets.Hide();
-			DataCollector.WriteMetaData(CoinsPer);
-		}
-		else {
-			if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
-				foreach (Friend f in friends) {
-					f.AdjustTransform(e.data["users"], !setInitialPositions);
-				}
+			else {
+				if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
+					foreach (Friend f in friends) {
+						f.AdjustTransform(e.data["users"], !setInitialPositions);
+					}
 
-				setInitialPositions = true;
+					setInitialPositions = true;
+				}
 			}
-		}
-		
-		_elapsedMs = (int) e.data["time"].f;
-		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
-		if (_inCountdown) {
-			int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
-			string text = "Round " + RoundNum + " starts in " + remainder 
-						  + (remainder == 1 ? " second" : " seconds");
 			
-			countdownText.text = PrevRoundScoreText + text;
-		} else {
-			timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
-		}
+			_elapsedMs = (int) e.data["time"].f;
+			if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
+			if (_inCountdown) {
+				int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
+				string text = "Round " + RoundNum + " starts in " + remainder 
+							  + (remainder == 1 ? " second" : " seconds");
+				
+				countdownText.text = PrevRoundScoreText + text;
+			} else {
+				timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
+			}
 
-		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
-		send.AddField("position", SerializeVector3(transform.localPosition));
-		send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
-		send.AddField("range", light.range);
-		send.AddField("flying", flying);
-		send.AddField("speed", speed);
-		socket.Emit("update", send);
+			JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
+			send.AddField("position", SerializeVector3(transform.localPosition));
+			send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
+			send.AddField("range", light.range);
+			send.AddField("flying", flying);
+			send.AddField("speed", speed);
+			socket.Emit("update", send);
+		}
+		catch (Exception ex) {
+			Debug.Log(ex);
+		}
 	}
 
 	public static string ParseMilliseconds(int time_ms) {
@@ -481,24 +492,30 @@ public class Interface : MonoBehaviour {
 	}
 
 	private void AdjustMyLight() {
-		if (LightDecreasing) {
-			if (light.range > MinRange) {
-				light.range -= ConstDecrease * Time.deltaTime;
+		try {
+			if (LightDecreasing) {
+				if (light.range > MinRange) {
+					light.range -= ConstDecrease * Time.deltaTime;
+				}
 			}
-		}
 
-		if (MyCoinsOwned > 0) {
-			MyCoinsOwned--;
-			light.range += OwnRangeIncrease;
-		}
-		if (OtherCoinsOwned > 0) {
-			OtherCoinsOwned--;
-			light.range += OtherRangeIncrease;
-		}
+			if (MyCoinsOwned > 0) {
+				MyCoinsOwned--;
+				light.range += OwnRangeIncrease;
+			}
 
-		RenderSettings.fogDensity = Mathf.Clamp(5f / light.range, 0.03f, 0.2f);
-		//TODO Max range
-		buckets.UpdateHealth();
+			if (OtherCoinsOwned > 0) {
+				OtherCoinsOwned--;
+				light.range += OtherRangeIncrease;
+			}
+
+			RenderSettings.fogDensity = Mathf.Clamp(5f / light.range, 0.03f, 0.2f);
+			//TODO Max range
+			buckets.UpdateHealth();
+		}
+		catch (Exception ex) {
+			Debug.Log(ex);
+		}
 	}
 
 	public static OVRInput.RawButton GetButtonOne() {
@@ -731,38 +748,75 @@ public class Interface : MonoBehaviour {
 	}
 
 	public static Quaternion GetMyRotation() { //Left eye camera if in VR, otherwise, whole camera rig's rotation:
-		if (!DisableVR) {
-			return _centerEyeTransform.localRotation;
-			//return _interfaceTransform.GetChild(0).GetChild(0).localRotation;
+		try {
+			if (!DisableVR) {
+				return _centerEyeTransform.localRotation;
+				//return _interfaceTransform.GetChild(0).GetChild(0).localRotation;
+			}
+
+			return _interfaceTransform.localRotation;
 		}
-		return _interfaceTransform.localRotation;
+		catch (Exception e) {
+			return Quaternion.identity;
+		}
 	}
 
 	public static Vector3 GetMyForward() {
-		return _centerEyeTransform.forward;
+		try {
+			return _centerEyeTransform.forward;
+		}
+		catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 GetMyRight() {
-		return _centerEyeTransform.right;
+		try {
+			return _centerEyeTransform.right;
+		}
+		catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 HeadPosition() {
-		return _centerEyeTransform.localPosition;
+		try {
+			return _centerEyeTransform.localPosition;
+		}
+		catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 LeftHandPosition() {
-		return _leftHandTransform.localPosition;
+		try {
+			return _leftHandTransform.localPosition;
+		} catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 RightHandPosition() {
-		return _rightHandTransform.localPosition;
+		try {
+			return _rightHandTransform.localPosition;
+		} catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 LeftHandRotation() {
-		return _leftHandTransform.localEulerAngles;
+		try {
+			return _leftHandTransform.localEulerAngles;
+		} catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 
 	public static Vector3 RightHandRotation() {
-		return _rightHandTransform.localEulerAngles;
+		try {
+			return _rightHandTransform.localEulerAngles;
+		} catch (Exception e) {
+			return Vector3.zero;
+		}
 	}
 }
