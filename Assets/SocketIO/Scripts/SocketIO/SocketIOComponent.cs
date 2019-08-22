@@ -35,6 +35,7 @@ using System.Threading;
 using UnityEngine;
 using WebSocketSharp;
 using WebSocketSharp.Net;
+using Random = UnityEngine.Random;
 
 namespace SocketIO
 {
@@ -75,7 +76,7 @@ namespace SocketIO
 
 		private int packetId;
 
-		private object eventQueueLock;
+		//private object eventQueueLock;
 		private Queue<SocketIOEvent> eventQueue;
 
 		private object ackQueueLock;
@@ -91,6 +92,7 @@ namespace SocketIO
 
 		public void Awake()
 		{
+			Debug.Log("Socket Awake called");
 			encoder = new Encoder();
 			decoder = new Decoder();
 			parser = new Parser();
@@ -106,7 +108,7 @@ namespace SocketIO
 			ws.OnClose += OnClose;
 			wsConnected = false;
 
-			eventQueueLock = new object();
+			//eventQueueLock = new object();
 			eventQueue = new Queue<SocketIOEvent>();
 
 			ackQueueLock = new object();
@@ -126,31 +128,48 @@ namespace SocketIO
 
 		public void Update()
 		{
-			lock(eventQueueLock){ 
-				while(eventQueue.Count > 0){
+			try {
+				//lock(eventQueueLock){ 
+				while (eventQueue.Count > 0) {
 					EmitEvent(eventQueue.Dequeue());
 				}
-			}
+				//}
 
-			lock(ackQueueLock){
-				while(ackQueue.Count > 0){
+				//lock(ackQueueLock){
+				while (ackQueue.Count > 0) {
 					InvokeAck(ackQueue.Dequeue());
 				}
-			}
+				//}
 
-			if(wsConnected != ws.IsConnected){
-				wsConnected = ws.IsConnected;
-				if(wsConnected){
-					EmitEvent("connect");
-				} else {
-					EmitEvent("disconnect");
+				if (wsConnected != ws.IsConnected) {
+					wsConnected = ws.IsConnected;
+					if (wsConnected) {
+						EmitEvent("connect");
+					}
+					else {
+						EmitEvent("disconnect");
+					}
 				}
-			}
 
-			// GC expired acks
-			if(ackList.Count == 0) { return; }
-			if(DateTime.Now.Subtract(ackList[0].time).TotalSeconds < ackExpirationTime){ return; }
-			ackList.RemoveAt(0);
+				if (Input.GetKeyDown(KeyCode.T)) {
+					throw new NullReferenceException("hello there");
+				}
+
+				// GC expired acks
+				if (ackList.Count == 0) {
+					return;
+				}
+
+				if (DateTime.Now.Subtract(ackList[0].time).TotalSeconds < ackExpirationTime) {
+					return;
+				}
+
+				ackList.RemoveAt(0);
+			}
+			catch (Exception ex) {
+				Debug.Log(ex);
+				Interface.RenewSocket();
+			}
 		}
 
 		public void OnDestroy()
@@ -373,7 +392,9 @@ namespace SocketIO
 
 			if (packet.socketPacketType == SocketPacketType.EVENT) {
 				SocketIOEvent e = parser.Parse(packet.json);
-				lock(eventQueueLock){ eventQueue.Enqueue(e); }
+				//lock (eventQueueLock) {
+					eventQueue.Enqueue(e);
+				//}
 			}
 		}
 

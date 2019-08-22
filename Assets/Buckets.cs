@@ -8,7 +8,6 @@ using UnityEngine;
 
 public class Buckets : MonoBehaviour {
 	private int coins = 0;
-	private static SocketIOComponent socket;
 	public GameObject crossPrefab;
 
 	private bool colorsInitialized = false;
@@ -17,8 +16,6 @@ public class Buckets : MonoBehaviour {
 	private bool laserTouching = false;
 	public static float NoShareAllowedAlbedo => 0.1f;
 	void Start() {
-		GameObject sockObject = GameObject.Find("SocketIO");
-		socket = sockObject.GetComponent<SocketIOComponent>();
 		giveSound = GameObject.Find("GiveSound").GetComponent<AudioSource>();
 	}
 
@@ -176,7 +173,9 @@ public class Buckets : MonoBehaviour {
 			if (!Tutorial.InTutorial) {
 				if (CompareRGB(c, Color.green)) {
 					Interface.MyCoinsOwned++;
-					socket.Emit("claim");
+					if (Interface.socket != null)
+						Interface.socket.Emit("claim");
+
 					PlaySound();
 					DataCollector.WriteEvent("claim", "me");
 				}
@@ -186,7 +185,9 @@ public class Buckets : MonoBehaviour {
 							if (Interface.permissibleIndividuals.Contains(friend.GetId())) {
 								Dictionary<string, string> dict = new Dictionary<string, string>();
 								dict["id"] = friend.GetId();
-								socket.Emit("give", new JSONObject(dict));
+								if (Interface.socket != null)
+									Interface.socket.Emit("give", new JSONObject(dict));
+									
 								friend.OtherCoins++;
 								PlaySound();
 								DataCollector.WriteEvent("give", DataCollector.ColorName(friend.GetColor()));

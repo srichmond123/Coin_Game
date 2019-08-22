@@ -17,6 +17,8 @@ using Vector2 = UnityEngine.Vector2;
 
 
 public class Interface : MonoBehaviour {
+	public GameObject socketPrefab;
+	private static GameObject socketPrefabStatic;
 	public static Color NullColor => Color.magenta;
 
 	public static float 
@@ -45,13 +47,15 @@ public class Interface : MonoBehaviour {
 
 	public bool _disableVR, _release;
 	public static bool Release = true;
+	public static CoinManager _coinManager;
 	
 
 	private static float speed = 4f;
+	private static GameObject sockObject;
 	public static SocketIOComponent socket;
 	private const string BlankId = "BLANK";
 	public static string MyId = BlankId;
-	private bool setInitialPositions = false;
+	private static bool setInitialPositions = false;
 	public static List<Friend> friends;
 	public static List<string> permissibleIndividuals;
 	public static int MyCoinsOwned = 0, OtherCoinsOwned = 0;
@@ -69,8 +73,8 @@ public class Interface : MonoBehaviour {
 	public static TextMeshPro scoreText, timeText, lobbyText, countdownText, tellShareText;
 	public static Transform scoreBar, redBar, greenBar, blueBar, emptyBar;
 	public static bool LightDecreasing = false;
-	private TerrainScript terrainScript;
-	private Boundaries boundaries;
+	private static TerrainScript terrainScript;
+	private static Boundaries boundaries;
 	
 	private static bool _inLobby = false;
 	public static bool TutorialBoundarySet = false;
@@ -103,8 +107,15 @@ public class Interface : MonoBehaviour {
 		permissibleIndividuals = new List<string>();
 		friends.Add(GameObject.Find("Player_1").GetComponent<Friend>());
 		friends.Add(GameObject.Find("Player_2").GetComponent<Friend>());
-		
-		socket = GameObject.Find("SocketIO").GetComponent<SocketIOComponent>();
+
+		socketPrefabStatic = socketPrefab;
+		sockObject = Instantiate(socketPrefabStatic);
+		socket = sockObject.GetComponent<SocketIOComponent>();
+		socket.enabled = false;
+		InitializeSocketEvents();
+
+		_coinManager = GameObject.Find("I manage coins").GetComponent<CoinManager>();
+		_coinManager.InitializeSocketEvents();
 		
 		//TODO hard set since this doesn't work:
 		/*
@@ -113,11 +124,6 @@ public class Interface : MonoBehaviour {
 			: "ws://127.0.0.1:4001/socket.io/?EIO=4&transport=websocket";
 			*/
 			
-		socket.On("start", HandleStart);
-		socket.On("update", HandleUpdate);
-		socket.On("give", HandleGenerosity);
-		socket.On("getOut", HandleRejection);
-		socket.On("newConnection", HandleNewConnection);
 		light = GameObject.Find("My Light").GetComponent<Light>();
 		_interfaceTransform = transform; //Since there's only one of these this is fine
 		_centerEyeTransform = GameObject.Find("CenterEyeAnchor").transform;
@@ -178,9 +184,37 @@ public class Interface : MonoBehaviour {
 		}
 	}
 
-	private void HandleRejection(SocketIOEvent e) {
+	public static void RenewSocket() {
+		Destroy(sockObject);
+		sockObject = Instantiate(_interfaceTransform.gameObject.GetComponent<Interface>().socketPrefab);
+		socket = sockObject.GetComponent<SocketIOComponent>();
+		socket.autoConnect = true;
+		socket.enabled = true;
+		InitializeSocketEvents();
+		_coinManager.InitializeSocketEvents();
+		socket.Connect();
+		if (!MyId.Equals(BlankId)) { //We're in game, ask socket to take me back:
+			JSONObject send = new JSONObject();
+			send.AddField("id", MyId);
+			socket.Emit("takeMeBack", send);
+		}
+	}
+
+	public static void InitializeSocketEvents() {
+		socket.On("start", HandleStart);
+		socket.On("update", HandleUpdate);
+		socket.On("give", HandleGenerosity);
+		socket.On("getOut", HandleRejection);
+		socket.On("newConnection", HandleNewConnection);
+	}
+
+	private static void HandleRejection(SocketIOEvent e) {
 		ToggleCountdown(true);
+		socket.Close();
 		socket.enabled = false;
+		Destroy(sockObject);
+		sockObject = null;
+		socket = null;
 		if (!e.data["quit"].b) {
 			PrevRoundScoreText = "Your team finished round 3 in "
 								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n" +
@@ -201,7 +235,7 @@ public class Interface : MonoBehaviour {
 		//_OtherCoins = OtherCoinsOwned;
 	}
 
-	private void HandleStart(SocketIOEvent e) {
+	private static void HandleStart(SocketIOEvent e) {
 		RoundNum++;
 		Dictionary<string, string> res = e.data.ToDictionary();
 		MyId = res["id"];
@@ -210,7 +244,7 @@ public class Interface : MonoBehaviour {
 			terrainScript.GetHeightAt(myPos)
 			+ terrainScript.transform.localPosition.y
 			+ HeightThreshold + 0.1f;
-		transform.localPosition = myPos;
+		_interfaceTransform.localPosition = myPos;
 		
 		JSONObject topologyArray = e.data["topology"][MyId];
 		Goal = (int) e.data["goal"].n;
@@ -266,7 +300,7 @@ public class Interface : MonoBehaviour {
 		}
 	}
 
-	private void HandleNewConnection(SocketIOEvent e) {
+	private static void HandleNewConnection(SocketIOEvent e) {
 		int numLeft = (int) e.data["left"].f;
 		if (_inLobby) {
 			lobbyText.text = "We are waiting for " + 
@@ -274,7 +308,7 @@ public class Interface : MonoBehaviour {
 		}
 	}
 
-	private void ToggleCountdown(bool state) {
+	private static void ToggleCountdown(bool state) {
 		_inCountdown = state;
 		timeText.enabled = !state;
 		countdownText.enabled = state;
@@ -301,20 +335,25 @@ public class Interface : MonoBehaviour {
 		}
 	}
 
-	private void HandleGenerosity(SocketIOEvent e) {
+	private static void HandleGenerosity(SocketIOEvent e) {
 		/*
 		 * Animate from friend obj with id e.data[from] to e.data[to],
 		 * or if e.data[to] == myId, animate from e.data[from] to me:
 		 */
-		Dictionary<string, string> data = e.data.ToDictionary();
-		GetFriendById(data["from"]).MyCoins--;
-		if (data["to"].Equals(MyId)) {
-			OtherCoinsOwned++;
-			//TODO Animation of receiving a coin
+		try {
+			Dictionary<string, string> data = e.data.ToDictionary();
+			GetFriendById(data["from"]).MyCoins--;
+			if (data["to"].Equals(MyId)) {
+				OtherCoinsOwned++;
+				//TODO Animation of receiving a coin
+			}
+			else {
+				//VirtueSignal(GetFriendById(data["from"]), GetFriendById(data["to"]));
+				GetFriendById(data["to"]).OtherCoins++;
+			}
 		}
-		else {
-			//VirtueSignal(GetFriendById(data["from"]), GetFriendById(data["to"]));
-			GetFriendById(data["to"]).OtherCoins++;
+		catch (Exception ex) {
+			Debug.Log(ex);
 		}
 	}
 	
@@ -393,53 +432,48 @@ public class Interface : MonoBehaviour {
 		return scale.x * 10f;
 	}
 
-	private void HandleUpdate(SocketIOEvent e) {
-		try {
-			if (friends[0].GetId().Equals("")) { 
-				//If this is the first update, assign ids:
-				int ind = 0;
-				foreach (string key in e.data["users"].keys) {
-					if (!key.Equals(MyId)) {
-						friends[ind++].SetId(key);
-					}
+	private static void HandleUpdate(SocketIOEvent e) {
+		if (friends[0].GetId().Equals("")) { 
+			//If this is the first update, assign ids:
+			int ind = 0;
+			foreach (string key in e.data["users"].keys) {
+				if (!key.Equals(MyId)) {
+					friends[ind++].SetId(key);
 				}
-				buckets.Show();
-				buckets.Hide();
-				DataCollector.WriteMetaData(CoinsPer);
 			}
-			else {
-				if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
-					foreach (Friend f in friends) {
-						f.AdjustTransform(e.data["users"], !setInitialPositions);
-					}
+			buckets.Show();
+			buckets.Hide();
+			DataCollector.WriteMetaData(CoinsPer);
+		}
+		else {
+			if (e.data["users"][Release ? friends[0].GetId() : MyId].HasField("position")) {
+				foreach (Friend f in friends) {
+					f.AdjustTransform(e.data["users"], !setInitialPositions);
+				}
 
-					setInitialPositions = true;
-				}
+				setInitialPositions = true;
 			}
+		}
+		
+		_elapsedMs = (int) e.data["time"].f;
+		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
+		if (_inCountdown) {
+			int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
+			string text = "Round " + RoundNum + " starts in " + remainder 
+						  + (remainder == 1 ? " second" : " seconds");
 			
-			_elapsedMs = (int) e.data["time"].f;
-			if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
-			if (_inCountdown) {
-				int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
-				string text = "Round " + RoundNum + " starts in " + remainder 
-							  + (remainder == 1 ? " second" : " seconds");
-				
-				countdownText.text = PrevRoundScoreText + text;
-			} else {
-				timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
-			}
+			countdownText.text = PrevRoundScoreText + text;
+		} else {
+			timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
+		}
 
-			JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
-			send.AddField("position", SerializeVector3(transform.localPosition));
-			send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
-			send.AddField("range", light.range);
-			send.AddField("flying", flying);
-			send.AddField("speed", speed);
-			socket.Emit("update", send);
-		}
-		catch (Exception ex) {
-			Debug.Log(ex);
-		}
+		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
+		send.AddField("position", SerializeVector3(_interfaceTransform.localPosition));
+		send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
+		send.AddField("range", light.range);
+		send.AddField("flying", flying);
+		send.AddField("speed", speed);
+		socket.Emit("update", send);
 	}
 
 	public static string ParseMilliseconds(int time_ms) {
@@ -452,7 +486,12 @@ public class Interface : MonoBehaviour {
 
 
 	public static Vector3 GetMyPosition() {
-		return _interfaceTransform.localPosition;
+		try {
+			return _interfaceTransform.localPosition;
+		}
+		catch (Exception ex) {
+			return Vector3.zero;
+		}
 	}
 
 	public static JSONObject SerializeVector3(Vector3 v) {
@@ -532,7 +571,7 @@ public class Interface : MonoBehaviour {
 
 	// Update is called once per frame
 	private void Update() {
-		if (_inLobby || _inCountdown) {
+		if (_inLobby || _inCountdown) { //<--bad
 			
 		} else {
 			AdjustMyLight();
@@ -613,6 +652,12 @@ public class Interface : MonoBehaviour {
 				if (OVRInput.GetDown(GetPrimaryIndexTrigger())) {
 					buckets.HandleClick();
 				}
+
+				/*if (Input.GetKeyDown(KeyCode.T)) {
+					JSONObject send = new JSONObject();
+					send.AddField("id", MyId);
+					socket.Emit("takeMeBack", send);
+				}*/ //^^This was to test if new socket emits worked
 			}
 			else {
 				if (Input.GetKey(KeyCode.RightArrow)) {

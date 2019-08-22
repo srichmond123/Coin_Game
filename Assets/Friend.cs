@@ -35,45 +35,46 @@ public class Friend : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update() {
-		if (startQueue) {
-			//Take interval time to go from queue[0] to queue[1]:
-			if (timeSinceUpdate >= interval || oldPosition.Equals(Vector3.zero)) {
-				if (oldPosition.Equals(Vector3.zero)) {
-					oldPosition = Pop(positionQueue, 0);
-					oldRotation = Pop(rotationQueue, 0);
-					oldTime = Pop(timestampQueue, 0);
-				}
-				else {
-					Transform t = transform;
-					oldPosition = t.localPosition;
-					oldRotation = t.localRotation;
-					oldTime = targetTime + (timeSinceUpdate - interval);
-				}
+		try { //Sloppy but experiments are soon and we can't have any crashes
+			if (startQueue) {
+				//Take interval time to go from queue[0] to queue[1]:
+				if (timeSinceUpdate >= interval || oldPosition.Equals(Vector3.zero)) {
+					if (oldPosition.Equals(Vector3.zero)) {
+						oldPosition = Pop(positionQueue, 0);
+						oldRotation = Pop(rotationQueue, 0);
+						oldTime = Pop(timestampQueue, 0);
+					}
+					else {
+						Transform t = transform;
+						oldPosition = t.localPosition;
+						oldRotation = t.localRotation;
+						oldTime = targetTime + (timeSinceUpdate - interval);
+					}
 
-				try {
 					targetPosition = Pop(positionQueue, 0);
 					targetRotation = Pop(rotationQueue, 0);
 					targetTime = Pop(timestampQueue, 0);
-				}
-				catch (ArgumentOutOfRangeException e) {
-					//Pass, player quit, otherwise it'll fix next update
+
+					timeSinceUpdate = 0f;
+					interval = targetTime - oldTime;
 				}
 
-				timeSinceUpdate = 0f;
-				interval = targetTime - oldTime;
+				timeSinceUpdate += Time.deltaTime;
+
+				Vector3 dir = Vector3.Normalize(targetPosition - oldPosition);
+				Vector3 incr = speed * Time.deltaTime * dir;
+				Transform tr = transform;
+				tr.localPosition += incr;
+				if (!speed.Equals(0f)) {
+					//tr.localRotation = Quaternion.LookRotation(incr);
+				}
+
+				//transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval); //<--lurchy method
+				tr.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
 			}
-			timeSinceUpdate += Time.deltaTime;
-			
-			Vector3 dir = Vector3.Normalize(targetPosition - oldPosition);
-			Vector3 incr = speed * Time.deltaTime * dir;
-			Transform tr = transform;
-			tr.localPosition += incr;
-			if (!speed.Equals(0f)) {
-				//tr.localRotation = Quaternion.LookRotation(incr);
-			}
-			
-			//transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval); //<--lurchy method
-			tr.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
+		}
+		catch (Exception e) {
+			Debug.Log(e);
 		}
 	}
 

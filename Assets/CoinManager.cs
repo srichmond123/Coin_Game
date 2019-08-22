@@ -11,19 +11,13 @@ public class CoinManager : MonoBehaviour {
 	// Start is called before the first frame update
 	public GameObject coinPrefab;
 	private List<GameObject> coins;
-	private static SocketIOComponent socket;
 	private Buckets buckets;
 	private TerrainScript terrainScript;
 	private AudioSource coinSound;
 	void Start() {
 		coins = new List<GameObject>();
-		GameObject sockObject = GameObject.Find("SocketIO");
-		socket = sockObject.GetComponent<SocketIOComponent>();
 		buckets = GameObject.Find("Buckets").GetComponent<Buckets>();
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
-		socket.On("coins", HandleCoins);
-		socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
-		socket.On("newCoin", HandleNewCoin);
 		coinSound = GetComponentInChildren<AudioSource>();
 	}
 
@@ -31,6 +25,12 @@ public class CoinManager : MonoBehaviour {
 	public void AppendToList(GameObject coin) {
 		coin.GetComponent<Coin>().index = coins.Count;
 		coins.Add(coin);
+	}
+
+	public void InitializeSocketEvents() {
+		Interface.socket.On("coins", HandleCoins);
+		Interface.socket.On("tellCollect", HandleOtherCollect); //Somebody else got a coin
+		Interface.socket.On("newCoin", HandleNewCoin);
 	}
 	
 
@@ -127,7 +127,7 @@ public class CoinManager : MonoBehaviour {
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("index", index);
 		send.AddField("position", Interface.SerializeVector3(Interface.GetMyPosition()));
-		socket.Emit("collect", send);
+		Interface.socket.Emit("collect", send);
 		coinSound.transform.position = coins[index].transform.position;
 		coinSound.Play();
 		Destroy(coins[index]);

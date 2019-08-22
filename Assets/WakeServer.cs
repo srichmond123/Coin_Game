@@ -5,9 +5,18 @@ using UnityEngine.Networking;
 
 public class WakeServer : MonoBehaviour {
 	private string url;
+	private float timer = 0f;
 	void Start() {
 		url = GameObject.Find("OVRCameraRig").GetComponent<Interface>()._release ? "https://vr-coin-server.herokuapp.com" : "https://google.com";
 		StartCoroutine(GetRequest(url));
+	}
+
+	void Update() {
+		if (timer >= 120f) {
+			StartCoroutine(GetRequest(url));
+			timer = 0f;
+		}
+		timer += Time.deltaTime;
 	}
 
 	IEnumerator GetRequest(string uri) {
