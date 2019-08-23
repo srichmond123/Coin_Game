@@ -292,6 +292,7 @@ public class Interface : MonoBehaviour {
 								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
 			//Since round 1 has finished, get break MS from server:
 			CountdownTimeMs = (int) e.data["timeBetweenRounds"].f;
+			DataCollector.WriteMetaData(CoinsPer);
 		}
 		else { //Write to data collector:
 			int gameNum = int.Parse(res["gameNum"]);
