@@ -168,7 +168,7 @@ namespace SocketIO
 			}
 			catch (Exception ex) {
 				Debug.Log(ex);
-				Interface.RenewSocket();
+				//Interface.RenewSocket();
 			}
 		}
 

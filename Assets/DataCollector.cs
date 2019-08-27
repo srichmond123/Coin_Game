@@ -227,23 +227,25 @@ public class DataCollector : MonoBehaviour {
 	}
 
 	public static void SetPath(int gameNum) {
-		_path = (Interface.Release ? (Application.persistentDataPath + "/") : "") + "Data/";
-		if (!Directory.Exists(_path)) { //If first game ever:
+		if (_path.Equals("")) {
+			_path = (Interface.Release ? (Application.persistentDataPath + "/") : "") + "Data/";
+			if (!Directory.Exists(_path)) { //If first game ever:
+				Directory.CreateDirectory(_path);
+			}
+
+			_path += "Game_" + gameNum;
+			string append = "";
+			int ind = 1;
+			while (Directory.Exists(_path + append)) { //Ensure fresh directory for data stream:
+				append = " (" + (ind++) + ")";
+			}
+
+			_path += append + "/";
 			Directory.CreateDirectory(_path);
-		}
 
-		_path += "Game_" + gameNum;
-		string append = "";
-		int ind = 1;
-		while (Directory.Exists(_path + append)) { //Ensure fresh directory for data stream:
-			append = " (" + (ind++) + ")";
-		}
-
-		_path += append + "/";
-		Directory.CreateDirectory(_path);
-
-		for (int i = 1; i <= 3; i++) {
-			Directory.CreateDirectory(_path + "Round_" + i);
+			for (int i = 1; i <= 3; i++) {
+				Directory.CreateDirectory(_path + "Round_" + i);
+			}
 		}
 	}
 

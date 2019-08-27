@@ -71,6 +71,11 @@ public class Friend : MonoBehaviour {
 
 				//transform.localPosition = Vector3.LerpUnclamped(oldPosition, targetPosition, timeSinceUpdate / interval); //<--lurchy method
 				tr.localRotation = Quaternion.LerpUnclamped(oldRotation, targetRotation, timeSinceUpdate / interval);
+				
+				if (positionQueue.Count < 1) {
+					Debug.Log("Ran out");
+					startQueue = false;
+				}
 			}
 		}
 		catch (Exception e) {
@@ -135,10 +140,6 @@ public class Friend : MonoBehaviour {
 			timestampQueue.Add(Time.time);
 			if (positionQueue.Count > 2) {
 				startQueue = true;
-			}
-			else if (positionQueue.Count < 1) {
-				Debug.Log("Ran out");
-				startQueue = false;
 			}
 		}
 	}

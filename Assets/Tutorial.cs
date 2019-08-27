@@ -156,7 +156,7 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			if (Input.GetKeyDown(KeyCode.Space)) { //shortcut
-				EndTutorial();
+				EndTutorial(true);
 			}
 
 			if (Input.GetKeyDown(KeyCode.Tilde)) {
@@ -424,7 +424,7 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case LeaderboardExplanation: {
-				Interface.LeaderBoard.enabled = true;
+				Interface.LeaderBoard.SetActive(true);
 				break;
 			}
 
@@ -434,7 +434,7 @@ public class Tutorial : MonoBehaviour {
 			}
 
 			case EndStep + 1: {
-				EndTutorial();
+				EndTutorial(true);
 				break;
 			}
 		}
@@ -592,12 +592,15 @@ public class Tutorial : MonoBehaviour {
 		return "END";
 	}
 
-	private static void EndTutorial() {
+	public static void EndTutorial(bool notifyServer) {
 		DestroyAllInstances();
 		ToggleDirArrowVisibility(false);
 		CurrStep = EndStep;
-		Interface.LeaderBoard.enabled = true;
-		Interface.socket.enabled = true;
+		Interface.LeaderBoard.SetActive(true);
+		if (notifyServer) {
+			Interface.socket.Emit("doneTutorial");
+		}
+
 		Interface.scoreText.enabled = true;
 		Interface.timeText.enabled = true;
 		Interface.timeText.text = " 0:00";

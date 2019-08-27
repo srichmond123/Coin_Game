@@ -17,6 +17,7 @@ using Vector2 = UnityEngine.Vector2;
 
 
 public class Interface : MonoBehaviour {
+	public bool _A, _B, _C; //Check one before build, depending on ID of headset
 	public GameObject socketPrefab;
 	private static GameObject socketPrefabStatic;
 	public static Color NullColor => Color.magenta;
@@ -26,7 +27,7 @@ public class Interface : MonoBehaviour {
 		//MaxRange = 200f,
 		OwnRangeIncrease = 22f, 
 		OtherRangeIncrease = 22f, 
-		ConstDecrease = 2.0f, 
+		ConstDecrease = 0.125f, 
 		InitialRange = 80f, 
 		MaxSpeed = 5.5f,
 		SpeedIncrement = 2.5f,
@@ -53,8 +54,7 @@ public class Interface : MonoBehaviour {
 	private static float speed = 4f;
 	private static GameObject sockObject;
 	public static SocketIOComponent socket;
-	private const string BlankId = "BLANK";
-	public static string MyId = BlankId;
+	public static string MyId;
 	private static bool setInitialPositions = false;
 	public static List<Friend> friends;
 	public static List<string> permissibleIndividuals;
@@ -85,7 +85,7 @@ public class Interface : MonoBehaviour {
 	private static LoadingCircle _loadingCircle;
 	public static int RoundNum = 0; //1, 2, or 3 for simplicity - Socket start emission will incr. this to 1 at first
 	private static string PrevRoundScoreText = "";
-	public static MeshRenderer LeaderBoard;
+	public static GameObject LeaderBoard;
 	public static float _unityTime = 0f;
 
 	private static GameObject _RLaser, _LLaser;
@@ -108,14 +108,16 @@ public class Interface : MonoBehaviour {
 		friends.Add(GameObject.Find("Player_1").GetComponent<Friend>());
 		friends.Add(GameObject.Find("Player_2").GetComponent<Friend>());
 
-		socketPrefabStatic = socketPrefab;
-		sockObject = Instantiate(socketPrefabStatic);
+		sockObject = Instantiate(socketPrefab);
 		socket = sockObject.GetComponent<SocketIOComponent>();
+		MyId = _A ? "A" : (_B ? "B" : "C");
+
 		socket.enabled = false;
 		InitializeSocketEvents();
 
 		_coinManager = GameObject.Find("I manage coins").GetComponent<CoinManager>();
 		_coinManager.InitializeSocketEvents();
+		socket.enabled = true;
 		
 		//TODO hard set since this doesn't work:
 		/*
@@ -140,8 +142,8 @@ public class Interface : MonoBehaviour {
 		blueBar = GameObject.Find("BlueBar").transform;
 		greenBar = GameObject.Find("GreenBar").transform;
 		emptyBar = GameObject.Find("EmptyBar").transform;
-		LeaderBoard = GameObject.Find("LeaderBoard").GetComponent<MeshRenderer>();
-		LeaderBoard.enabled = false;
+		LeaderBoard = GameObject.Find("LeaderBoard");
+		LeaderBoard.SetActive(false);
 		BarOrigin = greenBar.localPosition;
 		
 		terrainScript = GameObject.Find("Terrain").GetComponent<TerrainScript>();
@@ -183,7 +185,11 @@ public class Interface : MonoBehaviour {
 			flying = false;
 		}
 	}
-
+	
+	/// <summary>
+	/// This method was an attempt to fix the crashing that would randomly happen.
+	/// It doesn't work so I'm adding a mechanism where a player can quit and rejoin a game
+	/// </summary>
 	public static void RenewSocket() {
 		Destroy(sockObject);
 		sockObject = Instantiate(_interfaceTransform.gameObject.GetComponent<Interface>().socketPrefab);
@@ -193,11 +199,11 @@ public class Interface : MonoBehaviour {
 		InitializeSocketEvents();
 		_coinManager.InitializeSocketEvents();
 		socket.Connect();
-		if (!MyId.Equals(BlankId)) { //We're in game, ask socket to take me back:
+		/*if (!MyId.Equals(BlankId)) { //We're in game, ask socket to take me back:
 			JSONObject send = new JSONObject();
 			send.AddField("id", MyId);
 			socket.Emit("takeMeBack", send);
-		}
+		}*/
 	}
 
 	public static void InitializeSocketEvents() {
@@ -205,7 +211,19 @@ public class Interface : MonoBehaviour {
 		socket.On("update", HandleUpdate);
 		socket.On("give", HandleGenerosity);
 		socket.On("getOut", HandleRejection);
-		socket.On("newConnection", HandleNewConnection);
+		socket.On("newPlayerFinishedTutorial", HandleNewPlayerFinishedTutorial);
+		socket.On("connectionAcknowledged", SendId);
+	}
+
+	private static void SendId(SocketIOEvent e) {
+		//Ack contains Goal num coins (for tutorial):
+		Goal = (int) e.data["goal"].f;
+		scoreText.text = $"0/{Goal}";
+		TextMeshPro topScoreTexts = LeaderBoard.GetComponentInChildren<TextMeshPro>();
+		topScoreTexts.text = $"1. {e.data["firstPlace"].str}\n2. {e.data["secondPlace"].str}\n3. {e.data["thirdPlace"].str}";
+		JSONObject data = new JSONObject();
+		data.AddField("id", MyId);  //Tie whatever the real socket ID is to MyId (A, B, or C)
+		socket.Emit("id", data);
 	}
 
 	private static void HandleRejection(SocketIOEvent e) {
@@ -236,9 +254,10 @@ public class Interface : MonoBehaviour {
 	}
 
 	private static void HandleStart(SocketIOEvent e) {
-		RoundNum++;
-		Dictionary<string, string> res = e.data.ToDictionary();
-		MyId = res["id"];
+		if (Tutorial.InTutorial) {  // If this is happening, we're rejoining a game:
+			Tutorial.EndTutorial(notifyServer: false);
+		}
+		RoundNum = (int) e.data["roundNum"].f;
 		Vector3 myPos = DeserializeVector3(e.data["position"]);
 		myPos.y =
 			terrainScript.GetHeightAt(myPos)
@@ -247,7 +266,7 @@ public class Interface : MonoBehaviour {
 		_interfaceTransform.localPosition = myPos;
 		
 		JSONObject topologyArray = e.data["topology"][MyId];
-		Goal = (int) e.data["goal"].n;
+		//Goal = (int) e.data["goal"].n;
 		MinRange = e.data["minRange"].f;
 		//MaxRange = e.data["maxRange"].f;
 		OwnRangeIncrease = OtherRangeIncrease = e.data["rangeIncrease"].f;
@@ -287,6 +306,9 @@ public class Interface : MonoBehaviour {
 		flying = false;
 		slowingDown = false;
 
+		CoinsPer = (int) e.data["coinsPer"].f;
+		int gameNum = (int) e.data["gameNum"].f;
+		DataCollector.SetPath(gameNum);
 		if (RoundNum > 1) { //Tell previous score in countdown waiting room:
 			PrevRoundScoreText = "Your team finished round " + (RoundNum - 1) + " in "
 								 + ParseMilliseconds(_elapsedMs - CountdownTimeMs) + ".\n\n";
@@ -294,14 +316,9 @@ public class Interface : MonoBehaviour {
 			CountdownTimeMs = (int) e.data["timeBetweenRounds"].f;
 			DataCollector.WriteMetaData(CoinsPer);
 		}
-		else { //Write to data collector:
-			int gameNum = int.Parse(res["gameNum"]);
-			CoinsPer = int.Parse(res["coinsPer"]);
-			DataCollector.SetPath(gameNum);
-		}
 	}
 
-	private static void HandleNewConnection(SocketIOEvent e) {
+	private static void HandleNewPlayerFinishedTutorial(SocketIOEvent e) {
 		int numLeft = (int) e.data["left"].f;
 		if (_inLobby) {
 			lobbyText.text = "We are waiting for " + 
@@ -468,6 +485,14 @@ public class Interface : MonoBehaviour {
 			timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
 		}
 
+		if (e.data.HasField("pointCount")) {
+			foreach (Friend f in friends) {
+				f.Score = (int) e.data["pointCount"][f.GetId()].f;
+			}
+
+			UpdateScore();
+		}
+
 		JSONObject send = new JSONObject(JSONObject.Type.OBJECT);
 		send.AddField("position", SerializeVector3(_interfaceTransform.localPosition));
 		send.AddField("rotation", SerializeQuaternion(GetMyRotation()));
@@ -534,9 +559,9 @@ public class Interface : MonoBehaviour {
 	private void AdjustMyLight() {
 		try {
 			if (LightDecreasing) {
-				if (light.range > MinRange) {
-					light.range -= ConstDecrease * Time.deltaTime;
-				}
+				float toChange = light.range - MinRange;
+				toChange -= toChange * ConstDecrease * Time.deltaTime;
+				light.range = toChange + MinRange;
 			}
 
 			if (MyCoinsOwned > 0) {
