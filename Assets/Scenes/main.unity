@@ -9002,9 +9002,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fefa0f772c89e84479b866be5e8fed52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _A: 1
+  _A: 0
   _B: 0
-  _C: 0
+  _C: 1
   socketPrefab: {fileID: 100000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
   _disableVR: 0
   _release: 1

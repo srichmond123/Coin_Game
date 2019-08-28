@@ -490,6 +490,7 @@ public class Interface : MonoBehaviour {
 				f.Score = (int) e.data["pointCount"][f.GetId()].f;
 			}
 
+			MyScore = (int) e.data["pointCount"][MyId].f;
 			UpdateScore();
 		}
 
