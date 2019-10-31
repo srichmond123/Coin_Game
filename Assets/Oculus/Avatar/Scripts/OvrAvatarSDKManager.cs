@@ -65,17 +65,15 @@ public class OvrAvatarSDKManager : MonoBehaviour
 
 	// Update is called once per frame
 	void Update () {
-        IntPtr message = CAPI.ovrAvatarMessage_Pop();
-        if (message == IntPtr.Zero)
-        {
-            return;
-        }
+        try {
+            IntPtr message = CAPI.ovrAvatarMessage_Pop();
+            if (message == IntPtr.Zero) {
+                return;
+            }
 
-        ovrAvatarMessageType messageType = CAPI.ovrAvatarMessage_GetType(message);
-        switch (messageType)
-        {
-            case ovrAvatarMessageType.AssetLoaded:
-                {
+            ovrAvatarMessageType messageType = CAPI.ovrAvatarMessage_GetType(message);
+            switch (messageType) {
+                case ovrAvatarMessageType.AssetLoaded: {
                     ovrAvatarMessage_AssetLoaded assetMessage = CAPI.ovrAvatarMessage_GetAssetLoaded(message);
                     IntPtr asset = assetMessage.asset;
                     UInt64 assetID = assetMessage.assetID;
@@ -83,8 +81,7 @@ public class OvrAvatarSDKManager : MonoBehaviour
                     OvrAvatarAsset assetData;
                     IntPtr avatarOwner = IntPtr.Zero;
 
-                    switch (assetType)
-                    {
+                    switch (assetType) {
                         case ovrAvatarAssetType.Mesh:
                             assetData = new OvrAvatarAssetMesh(assetID, asset, ovrAvatarAssetType.Mesh);
                             break;
@@ -99,36 +96,30 @@ public class OvrAvatarSDKManager : MonoBehaviour
                             assetData = new OvrAvatarAssetMesh(assetID, asset, ovrAvatarAssetType.CombinedMesh);
                             break;
                         default:
-                            throw new NotImplementedException(string.Format("Unsupported asset type format {0}", assetType.ToString()));
+                            throw new NotImplementedException(string.Format("Unsupported asset type format {0}",
+                                assetType.ToString()));
                     }
 
                     HashSet<assetLoadedCallback> callbackSet;
-                    if (assetType == ovrAvatarAssetType.CombinedMesh)
-                    {
-                        if (!assetCache.ContainsKey(assetID))
-                        {
+                    if (assetType == ovrAvatarAssetType.CombinedMesh) {
+                        if (!assetCache.ContainsKey(assetID)) {
                             assetCache.Add(assetID, assetData);
                         }
 
                         combinedMeshLoadedCallback callback;
-                        if (combinedMeshLoadedCallbacks.TryGetValue(avatarOwner, out callback))
-                        {
+                        if (combinedMeshLoadedCallbacks.TryGetValue(avatarOwner, out callback)) {
                             callback(asset);
                             combinedMeshLoadedCallbacks.Remove(avatarOwner);
                         }
-                        else
-                        {
+                        else {
                             AvatarLogger.LogWarning("Loaded a combined mesh with no owner: " + assetMessage.assetID);
                         }
                     }
-                    else
-                    {
-                        if (assetLoadedCallbacks.TryGetValue(assetMessage.assetID, out callbackSet))
-                        {
+                    else {
+                        if (assetLoadedCallbacks.TryGetValue(assetMessage.assetID, out callbackSet)) {
                             assetCache.Add(assetID, assetData);
 
-                            foreach (var callback in callbackSet)
-                            {
+                            foreach (var callback in callbackSet) {
                                 callback(assetData);
                             }
 
@@ -138,29 +129,32 @@ public class OvrAvatarSDKManager : MonoBehaviour
 
                     break;
                 }
-            case ovrAvatarMessageType.AvatarSpecification:
-                {
+                case ovrAvatarMessageType.AvatarSpecification: {
                     ovrAvatarMessage_AvatarSpecification spec = CAPI.ovrAvatarMessage_GetAvatarSpecification(message);
                     HashSet<specificationCallback> callbackSet;
-                    if (specificationCallbacks.TryGetValue(spec.oculusUserID, out callbackSet))
-                    {
-                        foreach (var callback in callbackSet)
-                        {
+                    if (specificationCallbacks.TryGetValue(spec.oculusUserID, out callbackSet)) {
+                        foreach (var callback in callbackSet) {
                             callback(spec.avatarSpec);
                         }
 
                         specificationCallbacks.Remove(spec.oculusUserID);
                     }
-                    else
-                    {
-                        AvatarLogger.LogWarning("Error, got an avatar specification callback from a user id we don't have a record for: " + spec.oculusUserID);
+                    else {
+                        AvatarLogger.LogWarning(
+                            "Error, got an avatar specification callback from a user id we don't have a record for: " +
+                            spec.oculusUserID);
                     }
+
                     break;
                 }
-            default:
-                throw new NotImplementedException("Unhandled ovrAvatarMessageType: " + messageType);
+                default:
+                    throw new NotImplementedException("Unhandled ovrAvatarMessageType: " + messageType);
+            }
+
+            CAPI.ovrAvatarMessage_Free(message);
         }
-        CAPI.ovrAvatarMessage_Free(message);
+        catch (Exception e) {
+        }
     }
 
     public void RequestAvatarSpecification(

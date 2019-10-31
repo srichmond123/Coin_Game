@@ -21,105 +21,109 @@ public class DataCollector : MonoBehaviour {
 	}
 
 	public static void WriteMovement() {
-		string writeTo = $"{_path}Round_{Interface.RoundNum}/Movement.csv";
-		if (_currRound != Interface.RoundNum || _movementWriter == null) {
-			_currRound = Interface.RoundNum;
-			_movementWriter?.Flush();
-			_movementWriter = new StreamWriter(writeTo, true);
-			_writeWords(_movementWriter, new[] {
-				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
-				"Server time (milliseconds)",
-				"Game engine time (seconds)",	
-				"My points",
-				"Team points",
-				"My brightness",
-				"Blue brightness",
-				"Red brightness",
-				"Head x pos",
-				"Head y pos",
-				"Head z pos",
-				"Head x rot",
-				"Head y rot",
-				"Head z rot",
-				"Map x",
-				"Map y",
-				"Map z",
-				"Right x pos",
-				"Right y pos",
-				"Right z pos",
-				"Right x rot",
-				"Right y rot",
-				"Right z rot",
-				"Left x pos",
-				"Left y pos",
-				"Left z pos",
-				"Left x rot",
-				"Left y rot",
-				"Left z rot",
-				"Swimming"	
-			});
-		}
-		string[] line = new [] {
-			DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
-			(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
-			Interface._unityTime.ToString(),
-		};
+		if (!_path.Equals("")) {
+			string writeTo = $"{_path}Round_{Interface.RoundNum}/Movement.csv";
+			if (_currRound != Interface.RoundNum || _movementWriter == null) {
+				_currRound = Interface.RoundNum;
+				_movementWriter?.Flush();
+				_movementWriter = new StreamWriter(writeTo, true);
+				_writeWords(_movementWriter, new[] {
+					"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
+					"Server time (milliseconds)",
+					"Game engine time (seconds)",	
+					"My points",
+					"Team points",
+					"My brightness",
+					"Blue brightness",
+					"Red brightness",
+					"Head x pos",
+					"Head y pos",
+					"Head z pos",
+					"Head x rot",
+					"Head y rot",
+					"Head z rot",
+					"Map x",
+					"Map y",
+					"Map z",
+					"Right x pos",
+					"Right y pos",
+					"Right z pos",
+					"Right x rot",
+					"Right y rot",
+					"Right z rot",
+					"Left x pos",
+					"Left y pos",
+					"Left z pos",
+					"Left x rot",
+					"Left y rot",
+					"Left z rot",
+					"Swimming"	
+				});
+			}
+			string[] line = new [] {
+				DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
+				(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
+				Interface._unityTime.ToString(),
+			};
 
-		line = Concat(line, _getStandard());
-		
-		_writeWords(_movementWriter, line);
+			line = Concat(line, _getStandard());
+			
+			_writeWords(_movementWriter, line);
+		}
 	}
 
 	public static void WriteEvent(string evt, string toWhom) {
-		string writeTo = $"{_path}Round_{Interface.RoundNum}/Events.csv";
-		if (!File.Exists(writeTo)) {
-			_writeWords(writeTo, new[] {
-				"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
-				"Server time (milliseconds)",
-				"Game engine time (seconds)",
-				"Action", //collect, give, start swimming, or stop swimming
-				"To whom", //color or ""
-				"My points",
-				"Team points",
-				"My brightness",
-				"Blue brightness",
-				"Red brightness",
-				"Head x pos",
-				"Head y pos",
-				"Head z pos",
-				"Head x rot",
-				"Head y rot",
-				"Head z rot",
-				"Map x",
-				"Map y",
-				"Map z",
-				"Right x pos",
-				"Right y pos",
-				"Right z pos",
-				"Right x rot",
-				"Right y rot",
-				"Right z rot",
-				"Left x pos",
-				"Left y pos",
-				"Left z pos",
-				"Left x rot",
-				"Left y rot",
-				"Left z rot",
-				"Swimming"
-			});
+		if (!_path.Equals("")) {
+			string writeTo = $"{_path}Round_{Interface.RoundNum}/Events.csv";
+			if (!File.Exists(writeTo)) {
+				_writeWords(writeTo, new[] {
+					"Date and clock time (yyyy/MM/dd - hh:mm:ss.ffffff)",
+					"Server time (milliseconds)",
+					"Game engine time (seconds)",
+					"Action", //collect, give, start swimming, or stop swimming
+					"To whom", //color or ""
+					"My points",
+					"Team points",
+					"My brightness",
+					"Blue brightness",
+					"Red brightness",
+					"Head x pos",
+					"Head y pos",
+					"Head z pos",
+					"Head x rot",
+					"Head y rot",
+					"Head z rot",
+					"Map x",
+					"Map y",
+					"Map z",
+					"Right x pos",
+					"Right y pos",
+					"Right z pos",
+					"Right x rot",
+					"Right y rot",
+					"Right z rot",
+					"Left x pos",
+					"Left y pos",
+					"Left z pos",
+					"Left x rot",
+					"Left y rot",
+					"Left z rot",
+					"Swimming"
+				});
+			}
+
+			string[] line = new [] {
+				DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
+				(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
+				Interface._unityTime.ToString(),
+				evt,
+				toWhom,
+			};
+
+			line = Concat(line, _getStandard());
+			
+			_writeWords(writeTo, line);
 		}
-
-		string[] line = new [] {
-			DateTime.Now.ToString("yyyy/MM/dd - hh:mm:ss.fffffff"),
-			(Interface._elapsedMs - Interface.CountdownTimeMs).ToString(),
-			Interface._unityTime.ToString(),
-			evt,
-			toWhom,
-		};
-
-		line = Concat(line, _getStandard());
-		
-		_writeWords(writeTo, line);
 	}
 
 	public static string[] Concat(string[] a, string[] b) {

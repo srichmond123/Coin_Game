@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0.00090599, b: 0.0045547583, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0.0000020387033, b: 0.000028629285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -651,7 +651,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 0.04}
   m_Children: []
   m_Father: {fileID: 811680661}
-  m_RootOrder: 3
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 33.7, z: 0}
 --- !u!65 &73268689
 BoxCollider:
@@ -1602,6 +1602,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 150
       objectReference: {fileID: 0}
+    - target: {fileID: -5540011530364198323, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1702,6 +1707,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 150
       objectReference: {fileID: 0}
+    - target: {fileID: -584738095072847251, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6236265629060487442, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_CastShadows
@@ -1736,6 +1746,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 8820554237410003311, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8c946ca6c53fe489894a3ed782356a0b, type: 3}
@@ -2349,6 +2364,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: -150.21
       objectReference: {fileID: 0}
+    - target: {fileID: -5540011530364198323, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2449,6 +2469,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: -150.21
       objectReference: {fileID: 0}
+    - target: {fileID: -584738095072847251, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6236265629060487442, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_CastShadows
@@ -2488,6 +2513,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: -150.21
+      objectReference: {fileID: 0}
+    - target: {fileID: 8820554237410003311, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8c946ca6c53fe489894a3ed782356a0b, type: 3}
@@ -2789,7 +2819,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 0.04}
   m_Children: []
   m_Father: {fileID: 895727178}
-  m_RootOrder: 3
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &577902660
 BoxCollider:
@@ -3565,6 +3595,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 180
       objectReference: {fileID: 0}
+    - target: {fileID: -5540011530364198323, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -3665,6 +3700,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 180
       objectReference: {fileID: 0}
+    - target: {fileID: -584738095072847251, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6236265629060487442, guid: 8c946ca6c53fe489894a3ed782356a0b,
         type: 3}
       propertyPath: m_ReceiveShadows
@@ -3704,6 +3744,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8820554237410003311, guid: 8c946ca6c53fe489894a3ed782356a0b,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8c946ca6c53fe489894a3ed782356a0b, type: 3}
@@ -4899,6 +4944,55 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.18, y: 2.86, z: 1}
   m_Center: {x: 0, y: -0.12, z: 0.85}
+--- !u!1 &1068794430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1068794432}
+  - component: {fileID: 1068794431}
+  m_Layer: 0
+  m_Name: SocketIO
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1068794431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068794430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 961346d7e16a445ff93777573e78efd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  url: ws://vr-coin-server.herokuapp.com/socket.io/?EIO=4&transport=websocket
+  autoConnect: 1
+  reconnectDelay: 5
+  ackExpirationTime: 1800
+  pingInterval: 25
+  pingTimeout: 60
+--- !u!4 &1068794432
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068794430}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 648.25433, y: 3.0386724, z: 633.59863}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1130960237
 GameObject:
   m_ObjectHideFlags: 0
@@ -5333,7 +5427,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 0.04}
   m_Children: []
   m_Father: {fileID: 2092965687}
-  m_RootOrder: 3
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: -33.28, z: 0}
 --- !u!65 &1204797278
 BoxCollider:
@@ -6448,31 +6542,6 @@ MonoBehaviour:
   _headPoseRelativeOffsetRotation: {x: 0, y: 0, z: 0}
   _headPoseRelativeOffsetTranslation: {x: 0, y: 0, z: 0}
   profilerTcpPort: 32419
-  expandMixedRealityCapturePropertySheet: 0
-  enableMixedReality: 0
-  compositionMethod: 0
-  extraHiddenLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  capturingCameraDevice: 0
-  flipCameraFrameHorizontally: 0
-  flipCameraFrameVertically: 0
-  handPoseStateLatency: 0
-  sandwichCompositionRenderLatency: 0
-  sandwichCompositionBufferedFrames: 8
-  chromaKeyColor: {r: 0, g: 1, b: 0, a: 1}
-  chromaKeySimilarity: 0.6
-  chromaKeySmoothRange: 0.03
-  chromaKeySpillRange: 0.06
-  useDynamicLighting: 0
-  depthQuality: 1
-  dynamicLightingSmoothFactor: 8
-  dynamicLightingDepthVariationClampingValue: 0.001
-  virtualGreenScreenType: 0
-  virtualGreenScreenTopY: 10
-  virtualGreenScreenBottomY: -10
-  virtualGreenScreenApplyDepthCulling: 0
-  virtualGreenScreenDepthTolerance: 0.2
   _trackingOriginType: 1
   usePositionTracking: 1
   useRotationTracking: 1
@@ -9005,7 +9074,7 @@ MonoBehaviour:
   _A: 0
   _B: 0
   _C: 1
-  socketPrefab: {fileID: 100000, guid: 010d39cbd03ee4c99a746c1f8ecdc0d8, type: 3}
+  socketPrefab: {fileID: 0}
   _disableVR: 0
   _release: 1
 --- !u!1 &2065217543

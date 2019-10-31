@@ -108,8 +108,10 @@ public class Interface : MonoBehaviour {
 		friends.Add(GameObject.Find("Player_1").GetComponent<Friend>());
 		friends.Add(GameObject.Find("Player_2").GetComponent<Friend>());
 
-		sockObject = Instantiate(socketPrefab);
-		socket = sockObject.GetComponent<SocketIOComponent>();
+		//sockObject = GameObject.Find("SocketIO");
+		//socket = sockObject.GetComponent<SocketIOComponent>();
+		socket = GameObject.Find("SocketIO").GetComponent<SocketIOComponent>();
+		
 		MyId = _A ? "A" : (_B ? "B" : "C");
 
 		socket.enabled = false;

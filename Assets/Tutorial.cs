@@ -131,6 +131,8 @@ public class Tutorial : MonoBehaviour {
 					break;
 			}
 		}
+		
+		SetPrimaryArrows(rightHandInUse: true);
 	}
 
 	private static void ToggleDirArrowVisibility(bool b) {
