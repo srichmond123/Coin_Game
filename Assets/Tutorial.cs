@@ -151,7 +151,7 @@ public class Tutorial : MonoBehaviour {
 	void Update() {
 		if (InTutorial && CurrStep < EndStep) {
 			if (CurrStep >= ShowBucketsStep) {
-				float decr = CurrStep == ShowBucketsStep ? 17f : Interface.ConstDecrease;
+				float decr = CurrStep == ShowBucketsStep ? 17f : 4f;
 				Interface.light.range = Mathf.Max(MinRange, Interface.light.range - decr * Time.deltaTime);
 				RedRange = Mathf.Max(MinRange + 35f, RedRange - decr * Time.deltaTime);
 				BlueRange = Mathf.Max(MinRange + 35f, BlueRange - decr * Time.deltaTime);
@@ -513,13 +513,13 @@ public class Tutorial : MonoBehaviour {
 					$"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
 	 
 			case ShowScoreBarStep:
-				return $"Additionally, this bar will show how close your team is to {Interface.Goal} points," +
-				       $" as well as each team member's contribution.\n\n";
+				return $"Additionally, this bar will show how close your team is to {Interface.Goal} points.";
+				       //$" as well as each team member's contribution.\n\n";
 			
 			case ExplainScoreBarStep:
-				return "For example, this is what it would look like if your team had <b>5</b> points, " +
-				       "you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
-				       "player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.";
+				return "For example, this is what it would look like if your team had <b>5</b> points.";// +
+				       //"you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
+				       //"player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.";
 			
 			case ShowTimerStep:
 				return "\nFinally, the time elapsed since the start of the round will be shown here.\n\n" +

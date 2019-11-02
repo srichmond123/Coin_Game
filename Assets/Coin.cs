@@ -9,7 +9,6 @@ public class Coin : MonoBehaviour {
 	private string id;
 	public int index = -1;
 	private CoinManager parent;
-	private bool collided = false;
 	private float albedo = 1f;
 	private float speed = 0f;
 	private Color _color = Color.white;
@@ -38,19 +37,16 @@ public class Coin : MonoBehaviour {
 		return _color;
 	}
 
-	private void OnTriggerStay(Collider other) {
-		if (!collided) {
-			if (other.gameObject.tag.Equals("MainCamera") && Interface.MyId == id) {
-				if (Interface.buckets.GetCoinsHeld() < 1) {
-                    parent.Collect(index);
-                    collided = true;
-                    if (Tutorial.InTutorial) {
-                        Tutorial.NextStep();
-                    }
-                }
-				else { // Player just collided with green coin while holding a coin to share:
-					Interface.ToggleTellShareCoin(true);
+	private void OnTriggerEnter(Collider other) {
+		if (other.gameObject.tag.Equals("MainCamera") && Interface.MyId == id) {
+			if (Interface.buckets.GetCoinsHeld() < 1) {
+				parent.Collect(index);
+				if (Tutorial.InTutorial) {
+					Tutorial.NextStep();
 				}
+			}
+			else { // Player just collided with green coin while holding a coin to share:
+				Interface.ToggleTellShareCoin(true);
 			}
 		}
 	}

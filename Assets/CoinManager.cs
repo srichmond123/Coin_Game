@@ -58,6 +58,7 @@ public class CoinManager : MonoBehaviour {
 		inst.GetComponent<Collider>().enabled = true;
 		Coin cs = inst.GetComponent<Coin>();
 		Color c = id == Interface.MyId ? Color.green : Interface.GetFriendById(id).GetColor();
+		if (id.Equals(Interface.MyId)) inst.layer = LayerMask.NameToLayer("My Coins");
 		cs.SetColor(c);
 		cs.SetId(id);
 		cs.SetParent(this);

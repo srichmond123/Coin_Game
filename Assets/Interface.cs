@@ -17,7 +17,7 @@ using Vector2 = UnityEngine.Vector2;
 
 
 public class Interface : MonoBehaviour {
-	public bool _A, _B, _C; //Check one before build, depending on ID of headset
+	public bool _A, _B, _C; //Check one of the headsets under "Interface (script)", to create a build for a specific headset
 	public GameObject socketPrefab;
 	private static GameObject socketPrefabStatic;
 	public static Color NullColor => Color.magenta;
@@ -208,9 +208,9 @@ public class Interface : MonoBehaviour {
 		}*/
 	}
 
-	public static void InitializeSocketEvents() {
-		socket.On("start", HandleStart);
-		socket.On("update", HandleUpdate);
+	public static void InitializeSocketEvents() { // defining the events that follow a command from the server
+		socket.On("start", HandleStart);  // event when the tutorial is completed by all users
+		socket.On("update", HandleUpdate);// event when the server updates the current status (position and rotation) of users (every 0.25 sec)
 		socket.On("give", HandleGenerosity);
 		socket.On("getOut", HandleRejection);
 		socket.On("newPlayerFinishedTutorial", HandleNewPlayerFinishedTutorial);
@@ -475,7 +475,7 @@ public class Interface : MonoBehaviour {
 			}
 		}
 		
-		_elapsedMs = (int) e.data["time"].f;
+		_elapsedMs = (int) e.data["time"].f; // server serves as "global clock", counting ms from 0
 		if (_inCountdown && _elapsedMs >= CountdownTimeMs) ToggleCountdown(false);
 		if (_inCountdown) {
 			int remainder = (int) Mathf.Ceil((CountdownTimeMs - _elapsedMs) / 1000f);
@@ -487,12 +487,12 @@ public class Interface : MonoBehaviour {
 			timeText.text = ParseMilliseconds(_elapsedMs - CountdownTimeMs);
 		}
 
-		if (e.data.HasField("pointCount")) {
+		if (e.data.HasField("pointCount")) { // if someone is rejoining the game
 			foreach (Friend f in friends) {
-				f.Score = (int) e.data["pointCount"][f.GetId()].f;
+				f.Score = (int) e.data["pointCount"][f.GetId()].f; //show the number of points for each friend
 			}
 
-			MyScore = (int) e.data["pointCount"][MyId].f;
+			MyScore = (int) e.data["pointCount"][MyId].f; // show the user their own points
 			UpdateScore();
 		}
 

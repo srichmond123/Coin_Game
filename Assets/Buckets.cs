@@ -124,22 +124,28 @@ public class Buckets : MonoBehaviour {
 		foreach (Transform child in transform) {
 			Color bucketColor = GetBucketColor(child);
 			Transform bar = null;
+			foreach (Transform o in child) {
+				if (o.name.Equals("Bar")) {
+					bar = o;
+					break;
+				}
+			}
 			if (CompareRGB(bucketColor, Color.green)) {
-				bar = child.GetChild(child.childCount - 1);
+				//bar = child.GetChild(child.childCount - 1);
 				ScaleTo(bar, Interface.light.range / 50f);
 			}
 			else {
 				if (!Tutorial.InTutorial) {
 					foreach (Friend f in Interface.friends) {
 						if (CompareRGB(bucketColor, f.GetColor())) {
-							bar = child.GetChild(child.childCount - 1);
+							//bar = child.GetChild(child.childCount - 1);
 							float scale = f.GetRange() / 50f;
 							ScaleTo(bar, scale);
 						}
 					}
 				}
 				else {
-					bar = child.GetChild(child.childCount - 1);
+					//bar = child.GetChild(child.childCount - 1);
 					ScaleTo(bar, Tutorial.GetFriendRange(bucketColor));
 				}
 			}
