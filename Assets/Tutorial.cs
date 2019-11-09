@@ -498,97 +498,103 @@ public class Tutorial : MonoBehaviour {
 	private static string StepTexts(int stepNum) {
 		switch (stepNum) {
 			case Welcome:
-				return "Hello and thank you for your participation. " +
-				       "You will now go through a short tutorial.\n\n" +
-				       "To start, press the trigger on your controller by your index finger:";
+				return "Hello and thank you for your participation\n\n " +
+				       "In this tutorial, you will learn how to play the game\n" +
+				       "Please press the trigger button on your controller with your index finger to start";
 			
 			case ShowFriendsStep:
-				return "After completing this tutorial, you will be connected with two players (shown ahead):\n\n" +
-				       $"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+				return "In this game, you and your teammates will be whales at the bottom of the sea\n\n" +
+				       "(Press the trigger button to continue)";
 	 
 			case ShowScoreTextStep:
 				return
-					$"Your goal is to gain {Interface.Goal} points as fast as possible each round, for three rounds.\n\n" +
-					$"Above, your team's total points out of {Interface.Goal} will be shown.\n\n" +
-					$"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+					$"Your objective is to gain {Interface.Goal} points in the least amount of time\n\n" +
+					$"Above, you will be able to see the total number of points earned\n\n" +
+					$"(Press the trigger button to continue)";
 	 
 			case ShowScoreBarStep:
-				return $"Additionally, this bar will show how close your team is to {Interface.Goal} points.";
-				       //$" as well as each team member's contribution.\n\n";
-			
-			case ExplainScoreBarStep:
-				return "For example, this is what it would look like if your team had <b>5</b> points.";// +
-				       //"you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
-				       //"player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.";
-			
-			case ShowTimerStep:
-				return "\nFinally, the time elapsed since the start of the round will be shown here.\n\n" +
-				       $"Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to learn how to gain points.";
+				return "A bar below your score will display how far you are from reaching the target\n\n" +
+                    "(Press the trigger button to continue)";
+                    //$" as well as each team member's contribution.\n\n";
+
+            case ExplainScoreBarStep:
+				return "For example, this is what you will see when your team has earned <b>5</b> points\n\n" +
+                    "(Press the trigger button to continue)";
+                    //"you (the <color=green>green</color> player) had contributed 4 points, the <color=#0099ff>blue</color> " +
+                    //"player had contributed <b>1</b> point, and <color=red>red</color> had contributed <b>0</b> points.";
+
+            case ShowTimerStep:
+				return "\nA counter will display the time elapsed since the beginning of the game\n\n" +
+                    "(Press the trigger button to continue)";
+                    //$"Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to learn how to gain points.";
 			
 			case ShowCoinRulesStep:
-				return "You will collect <color=green>green</color> colored coins.\n" +
-				       "Your <color=#0099ff>blue</color> teammate will collect <color=#0099ff>blue</color> coins,\n" +
+				return "To gain points, you and your teammates will collect coins\n" +
+                       "You will collect <color=green>green</color> coins, your <color=#0099ff>blue</color> teammate will collect <color=#0099ff>blue</color> coins, " +
 				       "and your <color=red>red</color> teammate will collect <color=red>red</color> coins\n\n" +
-				       $"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
-			
-			case ShowCoinsStep:
-				return "Some coins are available in front of you. Try to swim to the <color=green>green</color> coin " +
-				       $"by pressing and holding the {(Interface.RightHandInUse ? "A" : "X")} button on your controller:";
+                       "(Press the trigger button to continue)";
+                       //$"Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to learn how to gain points.";
+
+            case ShowCoinsStep:
+				return $"Three coins are located in front of you\n" +
+				       $"To collect a coin, swim toward it by pressing and holding the {(Interface.RightHandInUse ? "A" : "X")} button on your controller";
 	 
 			case ShowBucketsStep:
-				return "You may notice your visibility decreasing.\n" +
-				       "Throughout gameplay, you and your teammates will <b>continuously</b> lose visibility.\n\n" +
-				       "After collecting a coin, you will be shown 3 buckets.\n" +
-				       $"\n(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+				return "Great!\n\n" +
+                       "You may notice that your visibility is decreasing\n" +
+                       "Throughout the game, you and your teammates will continuously lose visibility\n" +
+                       "You can regain visibility by putting a coin in your bucket or others'\n" +
+                       //"After collecting a coin, you will be shown 3 buckets\n" +
+				       "\n(Press the trigger button to continue)";
 			
 			case TryBucketsStep:
-				return
-					"You will have the option to give the coin to either yourself (<color=green>green</color> bucket), " +
-					"or to one of your teammates. Whoever you give it to will receive a boost in their visibility.\n\n" +
-					"Try to give it to yourself by pointing your laser at the <color=green>green</color> bucket " +
-					$"and pressing your {(Interface.RightHandInUse ? "right" : "left")} trigger:";
+				return "Put the coin you have collected in your bucket by pointing at it " +
+					   "and pressing the trigger button";
 							  
 			case FlyBackwardsStep:
-				return $"To swim backwards, press and hold the {(Interface.RightHandInUse ? "B" : "Y")} " +
-				       "button on your controller.\n\nTry it out now.";
+				return $"Your visibility has increased!\n\n" +
+                       $"Now, try swimming backwards by pressing and holding the {(Interface.RightHandInUse ? "B" : "Y")} " +
+                       $"button on your controller";
 			
 			case CollectSecondTime:
-				return "You and your teammates' visibilities will be indicated by the bar next to each bucket.\nTry " +
-				       "swimming to and collecting one of the coins in front of you by pressing and holding " +
-				       $"{(Interface.RightHandInUse ? "A" : "X")} again:";
+				return $"Good job!\n\n" +
+                       $"You and your teammates' visibilities will be indicated by the white bar on each bucket\n\n" +
+                       $"Collect another coin to give to your <color=#0099ff>blue</color> teammate by pressing and holding the " +
+				       $"{(Interface.RightHandInUse ? "A" : "X")} button again";
 			
 			case ShareBlue:
-				return "Now, try giving this coin to your <color=#0099ff>blue</color> teammate by pointing at the blue bucket " +
-					$"and pressing your {(Interface.RightHandInUse ? "right" : "left")} trigger:";
+				return "Now, Give the coin to your <color=#0099ff>blue</color> teammate by pointing at their bucket " +
+					"and pressing the trigger:";
 			
 			case CollectThirdTime:
-				return "Try swimming to the coin in front of you again by pressing and " +
-			       $"holding {(Interface.RightHandInUse ? "A" : "X")}:";
+				return $"Excellent!\n\n" +
+                       $"Now, collect another coin to give to your <color=red>red</color> teammate by pressing and " +
+			           $"holding the {(Interface.RightHandInUse ? "A" : "X")} button";
 			
 			case ShareRed:
-				return "Now, try to give this coin to your <color=red>red</color> teammate by pointing and clicking " +
-				       "at the red bucket:";
+				return "Give this coin to your <color=red>red</color> teammate by pointing and clicking " +
+				       "at their bucket:";
 	 
 			case TopologyExplanation:
-				return $"This experiment will consist of 3 rounds, where each round, " +
-				       $"you and your team try to earn {Interface.Goal} points as quickly as possible.\n\n" +
-				       $"Each round, one of your teammates' buckets might be transparent, " +
-				       $"and you will be <b>unable</b> to share coins with that player, as shown: " +
-				       $"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+				return $"Good job!\n\n" +
+                       $"This experiment will consist of 3 rounds\n" +
+				       $"In each round, one of your teammates' buckets may be transparent, " +
+				       $"and you will be <b>unable</b> to put coins in it\n\n" +
+				       $"(Press your trigger to continue)";
 			
 			case BoundsExplanation:
-				return "Since your team's map is limited, if you get close to the edge, you will see a wall of fog, " +
-				       "like what is in front of you. You will not be able to move past it.\n\n" +
-				       $"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+				return "When you will see a black wall, like the one front of you, " +
+				       "you will not be able to move past it\n\n" +
+				       $"(Press your trigger to continue)";
 			
 			case LeaderboardExplanation:
-				return "Lastly, the top 3 scores of all previous teams in any round are shown in front.\n" +
-				       "This panel will be visible throughout gameplay.\n\n" +
-				       $"(Press your {(Interface.RightHandInUse ? "right" : "left")} trigger to continue)";
+				return "Lastly, the top 3 scores of the previous 10 teams are shown\n" +
+				       "This panel will be visible throughout gameplay - try to beat those times!\n\n" +
+				       "(Press your trigger to continue)";
 			
 			case EndStep:
-				return "You are now ready to play.\n\nIf you have no further questions,\n" +
-				       $"press your {(Interface.RightHandInUse ? "right" : "left")} trigger to begin.";
+				return "You are now ready to play\n\n" +
+                        "If you have no further questions, press the trigger to begin";
 		}
 
 		return "END";
