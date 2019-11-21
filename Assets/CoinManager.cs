@@ -64,6 +64,7 @@ public class CoinManager : MonoBehaviour {
 		cs.SetParent(this);
 		cs.index = idx;
 		cs.SetAlbedo(0f);
+		Destroy(coins[idx]);
 		coins[idx] = inst;
 	}
 
@@ -81,6 +82,14 @@ public class CoinManager : MonoBehaviour {
 		foreach (GameObject o in coins) {
 			Destroy(o);
 		}
+		/*
+		GameObject pref = GameObject.Find("/CoinPrefab(Clone)");
+		while (pref != null) {
+			Destroy(pref);
+			Debug.Log("Destroyed pref");
+			pref = GameObject.Find("/CoinPrefab(Clone)");
+		}
+		*/
 		coins.Clear();
 	}
 
@@ -90,7 +99,9 @@ public class CoinManager : MonoBehaviour {
 		 * an id (it will handle color internally)
 		 */
 		_destroyAll();
-		foreach (string id in e.data.keys) {
+		List<string> keys = new List<string>(e.data.keys);
+		keys.Sort(); // Make sure everyone has the same sorted coinsList to avoid losing references.
+		foreach (string id in keys) {
 			Color c = Interface.NullColor;
 			if (!id.Equals(Interface.MyId)) {
 				foreach (Friend friend in Interface.friends) {
@@ -129,6 +140,7 @@ public class CoinManager : MonoBehaviour {
 		send.AddField("index", index);
 		send.AddField("position", Interface.SerializeVector3(Interface.GetMyPosition()));
 		Interface.socket.Emit("collect", send);
+		Debug.Log($"Collected: {send}, ");
 		coinSound.transform.position = coins[index].transform.position;
 		coinSound.Play();
 		Destroy(coins[index]);
